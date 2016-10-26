@@ -86,9 +86,9 @@
 				var s = smf[0];
 				if (smf[1]) {
 					var mf = $.split2(smf[1], ":");
-					var m = mf[0];
+					var m = mf[0].trim();
 					var f = mf[1];
-					s = f ? "$." + m + "(" + s + ",'" + f + "')" : "$." + m + "(" + s + ")";
+					s = f ? `$.${m}(${s}, ${f.split(",").map(x=>'"'+x+'"')})` : `$.${m}(${s})`;
 				}
 				s && jscode.push("buf.push(" + s + ");");
 			}

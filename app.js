@@ -5,6 +5,7 @@
 var View = require("sys.view");
 var event = require("sys.event");
 var data_bind = require("sys.data_bind");
+var $ = require("sys.pipe");
 
 var app = {};
 var view;
@@ -29,6 +30,11 @@ var getHash = function(){
 
 app.init  = function (page) {
     app.iniPage = page;
+    if(app.pipeEx){
+        for(var k in app.pipeEx){
+            $[k] = app.pipeEx[k];
+        }
+    }
     getHash();
     window.onhashchange = getHash;
 };
@@ -85,7 +91,6 @@ app.render = function () {
     app.onRender && app.onRender(view);
     View.setRender(app,view);
     view.onRender && view.onRender();
-    log({view});
 
     event.parse(document.body, view);
     data_bind.parse(document.body, view);
