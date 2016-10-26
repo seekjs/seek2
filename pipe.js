@@ -518,6 +518,14 @@
 
     /*=====================处理其他======================*/
 
+    //条件判断语句
+    exports.iif = function(exp, v1, v2){
+        if(arguments.length==1){
+            return exp || "";
+        }
+        return exp ? v1 : v2;
+    };
+
     //获取表单的值
     exports.getForm = function (form) {
         var o = {};
