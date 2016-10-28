@@ -34,6 +34,9 @@
 
     //获取真实路径
     var getPath = function (mid) {
+        if(/^(url)$/.test(mid)){
+            return ns["sys."].path + "/node/" + mid + ".js";
+        }
         for(var k in ns) {
             if(mid.startsWith(k)){
                 var o = ns[k];

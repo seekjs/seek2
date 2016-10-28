@@ -428,18 +428,22 @@
         return newObj;
     };
 
-
-
-    //合并对象
-    exports.mergeObj = function (This, ops) {
-        for (var k in ops) {
-            This[k] = ops[k];
+    //合并对象(简单复制)
+    exports.mergeObj = function(obj, sourceObj, noRepeat){
+        for(var k in sourceObj){
+            if(sourceObj.hasOwnProperty(k)) {
+                if (noRepeat && obj.hasOwnProperty(k)) {
+                    throw `the key "${k}" is already exist!`;
+                } else {
+                    obj[k] = sourceObj[k];
+                }
+            }
         }
-        return This;
+        return obj;
     };
 
-    //合并对象
-    exports.mergeObj_deep = function (This, ops) {
+    //克隆对象(深度克隆)
+    exports.cloneObj = function (This, ops) {
         var defaults = This.ops || {};
         ops = ops || {};
         This.el = This.el || {};

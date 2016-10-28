@@ -4,15 +4,18 @@
  */
 
 var template = require("sys.template");
+var pipe = require("sys.pipe");
 
 //初始化
-exports.setInit = function(app, view, ops){
+exports.setInit = function(app, view, ops){log(ops);
     view.go = app.go;
     view.render = app.render;
 
     view.getHTML = template.compile(ops.templateCode);
     view.page = ops.page;
     view.params = ops.params;
+    view.query = ops.query;
+    pipe.mergeObj(view, app.viewEx);
 };
 
 //DOM渲染完成

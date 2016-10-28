@@ -6,35 +6,35 @@ var View = require("sys.view");
 var event = require("sys.event");
 var data_bind = require("sys.data_bind");
 var $ = require("sys.pipe");
+var url = require("url");
 
 var app = {};
 var view;
 
 var cfg = {};
 
+app.viewEx = {};
+app.pipeEx = {};
+
 app.config = function (_cfg) {
-    for(var k in _cfg){
-        cfg[k] = _cfg[k];
-    }
+    $.mergeObj(cfg, _cfg);
 };
 
 var getHash = function(){
     var uri = location.hash && location.hash.slice(1) || app.iniPage;
-    var params = uri.split("/");
+    var query = url.parse(uri, true).query || null;
+    var params = uri.split("?")[0].split("/");
+
     var page = params.shift();
     if(params.length==1){
         params = {id: params[0]};
     }
-    app.go2(page, params);
+    app.go2(page, params, query);
 };
 
 app.init  = function (page) {
+    $.mergeObj($, app.pipeEx, true);
     app.iniPage = page;
-    if(app.pipeEx){
-        for(var k in app.pipeEx){
-            $[k] = app.pipeEx[k];
-        }
-    }
     getHash();
     window.onhashchange = getHash;
 };
@@ -49,14 +49,14 @@ app.go = function (page) {
 };
 
 //跳转
-app.go2 = function (page, params) {
+app.go2 = function (page, params, query) {
     var file = `${cfg.path}${page}.sk`;
     var code = require(file);
     var jsCode = /<script.*?>([\s\S]+?)<\/script>/.test(code) && RegExp.$1;
     var cssCode = /<style.*?>([\s\S]+?)<\/style>/.test(code) && RegExp.$1;
     var templateCode = /<template.*?>([\s\S]+?)<\/template>/.test(code) && RegExp.$1;
     if(!cssCode && !templateCode && !jsCode){
-        jsCode = code.trim();
+        templateCode = code.trim();
     }
     if(jsCode){
         view = parseModule(jsCode);
@@ -67,7 +67,8 @@ app.go2 = function (page, params) {
     }
 
     cssCode && app.parseCss(cssCode);
-    var ops = {templateCode,page,params};
+    var ops = {templateCode,page,params,query};
+    $.mergeObj(view, app.viewEx, true);
     View.setInit(app,view,ops);
     app.render();
 };
@@ -94,6 +95,16 @@ app.render = function () {
 
     event.parse(document.body, view);
     data_bind.parse(document.body, view);
+};
+
+//添加view扩展
+app.addView = function(viewEx){
+    $.mergeObj(app.viewEx, viewEx, true);
+};
+
+//添加pipe扩展
+app.addPipe = function(pipeEx){
+    $.mergeObj(app.pipeEx, pipeEx, true);
 };
 
 module.exports = app;
