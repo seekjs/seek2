@@ -37,6 +37,7 @@
         if(/^(url)$/.test(mid)){
             return ns["sys."].path + "/node/" + mid + ".js";
         }
+        var isNs = false;
         for(var k in ns) {
             if(mid.startsWith(k)){
                 var o = ns[k];
@@ -44,8 +45,12 @@
                 if(o.type){
                     mid += o.type;
                 }
+                isNs = true;
                 break;
             }
+        }
+        if(!isNs && !/^\//.test(mid)){
+            mid = `/node_modules/${mid}/index.sk`;
         }
         if(!/\.\w+$/.test(mid)){
             mid += ".js";

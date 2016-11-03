@@ -13,6 +13,7 @@ var view;
 
 var cfg = {};
 
+app.plugin = {};
 app.viewEx = {};
 app.pipeEx = {};
 
@@ -87,7 +88,12 @@ app.render = function () {
     view.onInit && view.onInit();
 
     var model = view.model || view;
-    document.body.innerHTML = view.getHTML(model);
+    var html = view.getHTML(model);
+    var firstElement = [...document.body.children].shift();
+    if(firstElement){
+        document.body.removeChild(firstElement);
+    }
+    document.body.insertAdjacentHTML("afterBegin", html);
 
     app.onRender && app.onRender(view);
     View.setRender(app,view);
@@ -105,6 +111,112 @@ app.addView = function(viewEx){
 //添加pipe扩展
 app.addPipe = function(pipeEx){
     $.mergeObj(app.pipeEx, pipeEx, true);
+};
+
+//获取当前所用的语言包
+app.getLang = function(langObj, lang){
+    if(!langObj){
+        return {};
+    }
+
+    var o = {};
+    for(var k in langObj){
+        if(k!="getLang"){
+            o[k] = langObj[k][lang];
+        }
+    }
+    return o;
+};
+
+
+//JSON转换
+var transferLangPack = function(json){
+    if(!json.currentLang) {
+        return json;
+    }
+    var newJson = {};
+    for (var k in json) {
+        if (k != "currentLang") {
+            newJson[k] = {
+                [json.currentLang] : json[k]
+            };
+        }
+    }
+    return newJson;
+};
+
+//语言包合并
+var mergeLangPack = function(langPack, langPack2){
+    var item,item2;
+    for(var key in langPack2){
+        item = langPack[key];
+        if(!item) {
+            throw `langPack not this key: ${key}`;
+        }
+        item2 = langPack2[key];
+        for(var lang in item2) {
+            item[lang]  = item2[lang];
+        }
+    }
+    return langPack;
+};
+
+//使用插件
+app.usePlugin = function(pluginName, ops){
+    plugin.use(pluginName, ops);
+};
+
+var plugin = {
+    use: function(pluginName, ops={}){
+        var code = require(pluginName);
+        log({code});
+
+        var jsCode = /<script.*?>([\s\S]+?)<\/script>/.test(code) && RegExp.$1;
+        var cssCode = /<style.*?>([\s\S]+?)<\/style>/.test(code) && RegExp.$1;
+        var templateCode = /<template.*?>([\s\S]+?)<\/template>/.test(code) && RegExp.$1;
+        if(!cssCode && !templateCode && !jsCode){
+            templateCode = code.trim();
+        }
+        var plug = {};
+        if(jsCode){
+            plug = parseModule(jsCode);
+        }else if(!templateCode) {
+            throw `the "${page}" page mush has a script or template`
+        }
+
+        cssCode && app.parseCss(cssCode);
+        var template = require("sys.template");
+        plug.getHTML = template.compile(templateCode);
+        this.render(plug);
+
+        if(plug.langPack) {
+            plug.langPack = transferLangPack(plug.langPack);
+            if(ops.langPack){
+                ops.langPack = transferLangPack(ops.langPack);
+                plug.langPack = mergeLangPack(plug.langPack, ops.langPack);
+            }
+            plug.lang = app.getLang(plug.langPack, ops.lang || plug.defaultLang);
+        }
+        plug.show = function(){
+            plug.ui.style.display = "block";
+        };
+        plug.name = pluginName;
+        plug.id = ops.id || pluginName;
+        app.plugin[plug.id] = plug;
+        log({plug});
+        return plug;
+    },
+    render: function(plug){
+        plug.onInit && plug.onInit();
+
+        var model = plug.model || plug;
+        var html = plug.getHTML(model);
+        document.body.insertAdjacentHTML("beforeEnd", html);
+        plug.ui = [...document.body.children].pop();
+
+        event.parse(plug.ui, plug);
+        data_bind.parse(plug.ui, plug);
+    }
 };
 
 module.exports = app;

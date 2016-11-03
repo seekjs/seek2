@@ -7,7 +7,7 @@ var template = require("sys.template");
 var pipe = require("sys.pipe");
 
 //初始化
-exports.setInit = function(app, view, ops){log(ops);
+exports.setInit = function(app, view, ops){
     view.go = app.go;
     view.render = app.render;
 
