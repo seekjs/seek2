@@ -7,26 +7,28 @@ var urlParse = require("url").parse;
 var View = require("sys.view");
 var event = require("sys.event");
 var data_bind = require("sys.data_bind");
+var data_part = require("sys.data_part");
 var lang = require("sys.lang");
 var template = require("sys.template");
 var pipe = require("sys.pipe");
 
 var view;
+var _view;
 var cfg = {};
 
 //解析Hash
 var parseHash = function(){
-    view = {};
-    view.uri = location.hash && location.hash.slice(1) || app.iniPage;
-    view.query = urlParse(view.uri, true).query || null;
-    view.params = view.uri.split("?")[0].split("/");
+    _view = {};
+    _view.uri = location.hash && location.hash.slice(1) || app.iniPage;
+    _view.query = urlParse(_view.uri, true).query || null;
+    _view.params = _view.uri.split("?")[0].split("/");
 
-    view.page = view.params.shift();
-    if(view.params.length==1){
-        view.params = {id: view.params[0]};
+    _view.page = _view.params.shift();
+    if(_view.params.length==1){
+        _view.params = {id: _view.params[0]};
     }
-    view.url = `${cfg.path}${view.page}.sk`;
-    parseSkPage(view.url);
+    _view.url = `${cfg.path}${_view.page}.sk`;
+    parseSkPage(_view.url);
 };
 
 //解析.sk页面
@@ -51,17 +53,24 @@ var parseSkPage = function(file, callback=parseView){
 //解析view
 var parseView = function (css,js,tp,diy) {
     css && parseCss(css);
+    view = js && parseModule(js) || _view;
     view.getHTML = tp && template.compile(tp);
     view.diy = diy;
-    js = js && parseModule(js) || {};
-    Object.assign(view, js);
+    Object.assign(view, _view);
     pipe.mergeObj(view, app.viewEx, true);
 
+    view.type = "main";
     view.go = app.go;
     view.render = parseHTML;
 
     app.onInit && app.onInit(view);
-    view.onInit && view.onInit();
+
+    if(view.onInit){
+        if(view.onInit.length>0){
+            return view.onInit(parseHTML);
+        }
+        view.onInit();
+    }
     parseHTML();
 };
 
@@ -79,7 +88,7 @@ var parseHTML = function () {
         "plugin": document.body,
         "main": app.box,
         "sub": view.box
-    })(view.type);
+    })[view.type];
 
     var model = view.model || view;
     var html = view.getHTML(model);
@@ -95,8 +104,8 @@ var parseHTML = function () {
 
     event.parse(box, view);
     data_bind.parse(box, view);
+    data_part.parse(box, view);
 };
-
 
 var app = {};
 app.plugin = {};
@@ -150,10 +159,10 @@ var plugin = {
     use: function(pluginName, ops={}){
         var {css,js,tp,diy} = parseSkPage(pluginName);
         css && parseCss(css);
-        view = js && parseModule(js) || {}; ha
+        view = js && parseModule(js) || {};
         view.diy = diy;
         plug.langPack = o.langPack;
-        plug.show = function(){mnm
+        plug.show = function(){
 
 
         cssCode && app.parseCss(cssCode);

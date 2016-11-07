@@ -3,6 +3,7 @@
 ~function (global,undefined) {
     global.log = console.log;
 
+    var alias = {};
     var ns = {};
 
     global.seekjs = {
@@ -12,6 +13,7 @@
                 var item = _ns[k];
                 ns[k] = item.path ? item : {path:item, type:".js"};
             }
+            alias = ops.alias || {};
         }
     };
 
@@ -37,8 +39,16 @@
         if(/^(url)$/.test(mid)){
             return ns["sys."].path + "/node/" + mid + ".js";
         }
+        var isAlias = false;
+        for(let k in alias){
+            if(mid==k){
+                mid = alias[k];
+                isAlias = true;
+                break;
+            }
+        }
         var isNs = false;
-        for(var k in ns) {
+        for(let k in ns) {
             if(mid.startsWith(k)){
                 var o = ns[k];
                 mid = mid.replace(k, o.path);
