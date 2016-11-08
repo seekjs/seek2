@@ -97,6 +97,10 @@ var parseHTML = function () {
         box.removeChild(firstElement);
     }
     box.insertAdjacentHTML("afterBegin", html);
+    view.ui = box.firstElementChild;
+    view.up2model = function () {
+        data_bind.up2model(view.ui, view);
+    };
 
     app.onRender && app.onRender(view);
     View.setRender(app,view);

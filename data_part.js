@@ -7,7 +7,6 @@
 //解析part
 exports.parse = function(box, view){
     [...box.querySelectorAll("[data-part]")].forEach(x=>{
-        log(x.dataset.part);
         var o = view[x.dataset.part] = {
             id: x.dataset.part,
             name: x.dataset.part,
