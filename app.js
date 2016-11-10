@@ -28,7 +28,13 @@ var parseHash = function(){
         _view.params = {id: _view.params[0]};
     }
     _view.url = `${cfg.path}${_view.page}.sk`;
-    parseSkPage(_view.url);
+
+    if(window.modules){
+        view = require("page."+_view.page);
+        parseView2();
+    }else {
+        parseSkPage(_view.url);
+    }
 };
 
 //解析.sk页面
@@ -54,8 +60,13 @@ var parseSkPage = function(file, callback=parseView){
 var parseView = function (css,js,tp,diy) {
     css && parseCss(css);
     view = js && parseModule(js) || _view;
-    view.getHTML = tp && template.compile(tp);
+    view.getHTML = tp && template.getFun(tp);
     view.diy = diy;
+    parseView2();
+};
+
+//解析view
+var parseView2 = function () {
     Object.assign(view, _view);
     pipe.mergeObj(view, app.viewEx, true);
 
@@ -91,7 +102,7 @@ var parseHTML = function () {
     })[view.type];
 
     var model = view.model || view;
-    var html = view.getHTML(model);
+    var html = view.getHTML.call(model, pipe);
     var firstElement = [...box.children].shift();
     if(firstElement){
         box.removeChild(firstElement);
@@ -167,7 +178,6 @@ var plugin = {
         view.diy = diy;
         plug.langPack = o.langPack;
         plug.show = function(){
-
 
         cssCode && app.parseCss(cssCode);
         plug.getHTML = template.compile(templateCode);
