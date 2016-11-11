@@ -1,0 +1,18 @@
+/**
+ * Created by likaituan on 16/10/19.
+ */
+
+<template>
+    <div class="home">
+        <ul>
+            <li>111</li>
+        </ul>
+    </div>
+</template>
+
+<script type="text/ecmascript-6">
+var list = {
+    app: ["useTitleRepair", "useAnimate"],
+    view: []
+};
+</script>

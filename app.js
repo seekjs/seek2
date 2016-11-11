@@ -101,6 +101,9 @@ var parseHTML = function () {
         "sub": view.box
     })[view.type];
 
+    app.onRenderBefore && app.onRenderBefore(view);
+    view.onRenderBefore && view.onRenderBefore();
+
     var model = view.model || view;
     var html = view.getHTML.call(model, pipe);
     var firstElement = [...box.children].shift();
