@@ -60,7 +60,13 @@
             }
         }
         if(!isNs && !/^\//.test(mid)){
-            mid = `/node_modules/${mid}/index.sk`;
+            if(mid.startsWith("seek-plugin-")) {
+                mid = `/node_modules/${mid}/index.sk`;
+            }else{
+                var code = getCode(`/node_modules/${mid}/package.json`);
+                var pk = parseModule(`module.exports=${code}`);
+                mid = `/node_modules/${mid}/${pk.main}`;
+            }
         }
         if(!/\.\w+$/.test(mid)){
             mid += ".js";
@@ -71,7 +77,7 @@
     var modules = {};
 
     //解析模块
-    var parseModule = global.parseModule = function (code) {
+    var parseModule = global.parseModule = function (code, file) {
         code = `
         var require = function (mid) {
             return getModule(mid);
@@ -84,8 +90,10 @@
         \n\n\n
         ${code}
         \n\n\n
-        return module.exports;
-        `;
+        return module.exports;`;
+        if(file) {
+            code += `\n\n//# sourceURL=${file}`;
+        }
         return new Function(code)();
     };
 
@@ -93,13 +101,14 @@
     var getModule = global.getModule = function (mid) {
         if (!modules[mid]) {
             var path = getPath(mid);
+            var file = path.split("/").pop();
             if (path.endsWith(".css")) {
                 modules[mid] = path;
                 loadCss(path);
             }else {
                 var code = getCode(path);
                 if(path.endsWith(".js")) {
-                    modules[mid] = parseModule(code);
+                    modules[mid] = parseModule(code, file);
                 }else {
                     modules[mid] = code;
                 }

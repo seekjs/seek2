@@ -59,7 +59,7 @@ var parseSkPage = function(file, callback=parseView){
 //解析view
 var parseView = function (css,js,tp,diy) {
     css && parseCss(css);
-    view = js && parseModule(js) || _view;
+    view = js && parseModule(js,_view.page+".sk") || _view;
     view.getHTML = tp && template.getFun(tp);
     view.diy = diy;
     parseView2();
@@ -70,7 +70,7 @@ var parseView2 = function () {
     Object.assign(view, _view);
     pipe.mergeObj(view, app.viewEx, true);
 
-    view.type = "main";
+    view.type = view.type || "main";
     view.go = app.go;
     view.render = parseHTML;
 
@@ -112,6 +112,20 @@ var parseHTML = function () {
     }
     box.insertAdjacentHTML("afterBegin", html);
     view.ui = box.firstElementChild;
+    view.toggle = function(){
+        view.ui.style.display = view.ui.style.display=="none" ? "block" : "none";
+    };
+    view.show = function(){
+        view.ui.style.display = "block";
+    };
+    view.hide = function(){
+        view.ui.style.display = "none";
+    };
+    view.display===false && view.hide();
+    if(view.type=="plugin"){
+        app.plugin[view.id] = view;
+    }
+
     view.up2model = function () {
         data_bind.up2model(view.ui, view);
     };
@@ -146,9 +160,15 @@ app.addPipe = function(pipeEx){
 };
 
 //使用插件
-app.usePlugin = function(pluginName, ops){
+app.usePlugin = function(pluginName, ops={}){
     //plugin.use(pluginName, ops);
-    parseSkPage(pluginName, ops);
+    _view = _view || {};
+    _view.type = "plugin";
+    _view.id = pluginName.split("-").pop();
+    _view.page = pluginName;
+    _view.box = document.body;
+    _view.display = ops.display;
+    parseSkPage(pluginName);
 
 };
 
