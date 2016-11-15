@@ -77,8 +77,7 @@
     var modules = {};
 
     //解析模块
-    var parseModule = global.parseModule = function (code, file) {
-        code = `
+    var parseModule = global.parseModule = function (code, file, iniExports) {
         var require = function (mid) {
             return getModule(mid);
         };
@@ -86,7 +85,9 @@
         module.resolve = function(path){
             return path;
         };
-        var exports = module.exports = {};
+        var exports = module.exports = iniExports || {};
+
+        code = `
         \n\n\n
         ${code}
         \n\n\n
@@ -94,7 +95,7 @@
         if(file) {
             code += `\n\n//# sourceURL=${file}`;
         }
-        return new Function(code)();
+        return new Function("require", "exports", "module", "dirname", "filename", code)(require, exports, module, file, file);
     };
 
     //加载模块

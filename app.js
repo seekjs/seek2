@@ -16,9 +16,11 @@ var view;
 var _view;
 var cfg = {};
 
+
 //解析Hash
 var parseHash = function(){
     _view = {};
+    _view.type = "main";
     _view.uri = location.hash && location.hash.slice(1) || app.iniPage;
     _view.query = urlParse(_view.uri, true).query || null;
     _view.params = _view.uri.split("?")[0].split("/");
@@ -30,16 +32,17 @@ var parseHash = function(){
     _view.url = `${cfg.path}${_view.page}.sk`;
 
     if(window.modules){
-        view = require("page."+_view.page);
-        parseView2();
+        view = new View(app);
+        Object.assign(view, viewrequire("page."+_view.page));
+        parseView();
     }else {
-        parseSkPage(_view.url);
+        parseSkPage();
     }
 };
 
 //解析.sk页面
-var parseSkPage = function(file, callback=parseView){
-    var code = require(file);
+var parseSkPage = function(){
+    var code = require(_view.url);
     var css = /<style.*?>([\s\S]+?)<\/style>/.test(code) && RegExp.$1;
     var tp = /<template.*?>([\s\S]+?)<\/template>/.test(code) && RegExp.$1;
     var js = /<script.*?>([\s\S]+?)<\/script>/.test(code) && RegExp.$1;
@@ -53,27 +56,23 @@ var parseSkPage = function(file, callback=parseView){
     if(!js && !tp){
         throw `the "${file}" page mush has a script or template`
     }
-    return callback(css,js,tp,diy);
-};
 
-//解析view
-var parseView = function (css,js,tp,diy) {
     css && parseCss(css);
-    view = js && parseModule(js,_view.page+".sk") || _view;
+    view = new View(app);
+    view = parseModule(js,_view.page+".sk", view);
+
     view.getHTML = tp && template.getFun(tp);
     view.diy = diy;
-    parseView2();
+
+    parseView();
 };
 
 //解析view
-var parseView2 = function () {
+var parseView = function () {
     Object.assign(view, _view);
-    pipe.mergeObj(view, app.viewEx, true);
+    view.type!="plugin" && pipe.mergeObj(view, app.viewEx, true);
 
-    view.type = view.type || "main";
     view.go = app.go;
-    view.render = parseHTML;
-
     app.onInit && app.onInit(view);
 
     if(view.onInit){
@@ -106,38 +105,29 @@ var parseHTML = function () {
 
     var model = view.model || view;
     var html = view.getHTML.call(model, pipe);
-    var firstElement = [...box.children].shift();
-    if(firstElement){
-        box.removeChild(firstElement);
+    if(view.type=="plugin") {
+        box.insertAdjacentHTML("beforeEnd", html);
+        view.ui = box.lastElementChild;
+    }else{
+        box.innerHTML = html;
+        view.ui = box.firstElementChild;
     }
-    box.insertAdjacentHTML("afterBegin", html);
-    view.ui = box.firstElementChild;
-    view.toggle = function(){
-        view.ui.style.display = view.ui.style.display=="none" ? "block" : "none";
-    };
-    view.show = function(){
-        view.ui.style.display = "block";
-    };
-    view.hide = function(){
-        view.ui.style.display = "none";
-    };
+
     view.display===false && view.hide();
     if(view.type=="plugin"){
         app.plugin[view.id] = view;
     }
 
-    view.up2model = function () {
-        data_bind.up2model(view.ui, view);
-    };
-
     app.onRender && app.onRender(view);
-    View.setRender(app,view);
+    //View.setRender(app,view);
     view.onRender && view.onRender();
 
     event.parse(box, view);
     data_bind.parse(box, view);
     data_part.parse(box, view);
 };
+
+
 
 var app = {};
 app.plugin = {};
@@ -161,21 +151,21 @@ app.addPipe = function(pipeEx){
 
 //使用插件
 app.usePlugin = function(pluginName, ops={}){
-    //plugin.use(pluginName, ops);
-    _view = _view || {};
-    _view.type = "plugin";
+    _view = {};
+    _view.type = ops.type || "plugin";
     _view.id = pluginName.split("-").pop();
+    _view.uri = pluginName;
+    _view.url = `/node_modules/${pluginName}/index.sk`;
     _view.page = pluginName;
-    _view.box = document.body;
+    _view.box = ops.box || document.body;
     _view.display = ops.display;
-    parseSkPage(pluginName);
-
+    parseSkPage();
 };
 
 //初始化
 app.init  = function (page) {
-    app.box = document.createElement("div");
-    document.body.appendChild(app.box);
+    document.body.insertAdjacentHTML("afterBegin", '<div class="sk-app"></div>');
+    app.box = document.body.firstElementChild;
 
     pipe.mergeObj(pipe, app.pipeEx, true);
     app.iniPage = page;
@@ -192,41 +182,6 @@ app.go = function (page) {
     }
 };
 
-
-var plugin = {
-    use: function(pluginName, ops={}){
-        var {css,js,tp,diy} = parseSkPage(pluginName);
-        css && parseCss(css);
-        view = js && parseModule(js) || {};
-        view.diy = diy;
-        plug.langPack = o.langPack;
-        plug.show = function(){
-
-        cssCode && app.parseCss(cssCode);
-        plug.getHTML = template.compile(templateCode);
-        this.render(plug);
-
-        var o = lang.getLangPack(plug.langPack, ops.langPack, ops.lang || plug.defaultLang);
-        plug.lang = o.lang;
-            plug.ui.style.display = "block";
-        };
-        plug.name = pluginName;
-        plug.id = ops.id || pluginName;
-        app.plugin[plug.id] = plug;
-        log({plug});
-        return plug;
-    },
-    render: function(plug){
-        plug.onInit && plug.onInit();
-
-        var model = plug.model || plug;
-        var html = plug.getHTML(model);
-        document.body.insertAdjacentHTML("beforeEnd", html);
-        plug.ui = [...document.body.children].pop();
-
-        event.parse(plug.ui, plug);
-        data_bind.parse(plug.ui, plug);
-    }
-};
+app.render = parseHTML;
 
 module.exports = app;
