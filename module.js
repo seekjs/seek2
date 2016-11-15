@@ -36,7 +36,7 @@
 
     //获取真实路径
     var getPath = function (mid) {
-        if(/^(url)$/.test(mid)){
+        if(node_sys_module_re.test(mid)){
             return ns["sys."].path + "/node/" + mid + ".js";
         }
         var isAlias = false;
@@ -125,6 +125,12 @@
     ns["sys."] = {
         path: lastScript.src.replace(/\w+\.js/,"")
     };
+    
+    var code = getCode(ns["sys."].path + "/node/node_sys_files.json");
+    code = new Function(`return ${code}`)().join("|");
+    var node_sys_module_re = new Function(`return /^(${code})$/`)();
+    alert(node_sys_module_re);
+        
     var main = lastScript.dataset.main;
     if(main){
         window.onload = function() {
