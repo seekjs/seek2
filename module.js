@@ -129,8 +129,7 @@
     var code = getCode(ns["sys."].path + "/node/node_sys_files.json");
     code = new Function(`return ${code}`)().join("|");
     var node_sys_module_re = new Function(`return /^(${code})$/`)();
-    alert(node_sys_module_re);
-        
+
     var main = lastScript.dataset.main;
     if(main){
         window.onload = function() {

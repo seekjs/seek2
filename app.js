@@ -29,7 +29,7 @@ var parseHash = function(){
     if(_view.params.length==1){
         _view.params = {id: _view.params[0]};
     }
-    _view.url = `${cfg.path}${_view.page}.sk`;
+    _view.url = `${cfg.page}${_view.page}.sk`;
 
     if(window.modules){
         view = new View(app);
@@ -42,14 +42,21 @@ var parseHash = function(){
 
 //解析.sk页面
 var parseSkPage = function(){
-    var code = require(_view.url);
-    var css = /<style.*?>([\s\S]+?)<\/style>/.test(code) && RegExp.$1;
-    var tp = /<template.*?>([\s\S]+?)<\/template>/.test(code) && RegExp.$1;
-    var js = /<script.*?>([\s\S]+?)<\/script>/.test(code) && RegExp.$1;
+    var css,tp,js;
     var diy = {};
-    code.replace(/<:(.*?)>([\s\S]+?)<\/:*?>/g, function(_,key,val){
-        diy[key] = val;
-    });
+    if(_view.url) {
+        var code = require(_view.url);
+        css = /<style.*?>([\s\S]+?)<\/style>/.test(code) && RegExp.$1;
+        tp = /<template.*?>([\s\S]+?)<\/template>/.test(code) && RegExp.$1;
+        js = /<script.*?>([\s\S]+?)<\/script>/.test(code) && RegExp.$1;
+        code.replace(/<:(.*?)>([\s\S]+?)<\/:*?>/g, function(_,key,val){
+            diy[key] = val;
+        });
+    }else{
+        css = cfg.css && require(`${cfg.css}/${_view.page}.css`) || "";
+        tp = cfg.tp && require(`${cfg.tp}/${_view.page}.html`) || "";
+        js = cfg.js && require(`${cfg.js}/${_view.page}.js`) || "";
+    }
     if(!css && !tp && !js && Object.keys(diy).length==0){
         tp = code.trim();
     }
@@ -134,7 +141,7 @@ app.plugin = {};
 app.viewEx = {};
 app.pipeEx = {};
 
-//配置
+//配置信息
 app.config = function (_cfg) {
     pipe.mergeObj(cfg, _cfg);
 };
