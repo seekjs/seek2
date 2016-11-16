@@ -98,8 +98,12 @@
         return new Function("require", "exports", "module", "dirname", "filename", code)(require, exports, module, file, file);
     };
 
+    var iii=0;
     //加载模块
     var getModule = global.getModule = function (mid) {
+        if(++iii==99999){
+            throw "call times is too more!";
+        }
         if (!modules[mid]) {
             var path = getPath(mid);
             var file = path.split("/").pop();

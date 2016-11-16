@@ -129,9 +129,9 @@ var parseHTML = function () {
     //View.setRender(app,view);
     view.onRender && view.onRender();
 
-    event.parse(box, view);
     data_bind.parse(box, view);
-    data_part.parse(box, view);
+    data_part.parse(box, view, View, app);
+    event.parse(box, view);
 };
 
 

@@ -3,11 +3,13 @@
  * Created by likaituan on 14/8/18.
  */
 
-
 //解析part
-exports.parse = function(box, view){
+exports.parse = function(box, view, View, app){
+    log({box, dp:box.querySelectorAll("[data-part]"), view});
     [...box.querySelectorAll("[data-part]")].forEach(x=>{
-        var o = view[x.dataset.part] = {
+        log({x});
+        var o = view[x.dataset.part] = new View(app);
+        Object.assign(o, {
             id: x.dataset.part,
             name: x.dataset.part,
             box: x,
@@ -21,6 +23,7 @@ exports.parse = function(box, view){
                 o.box.innerHTML = html;
                 return html;
             }
-        };
+        });
     });
+    log({view});
 };

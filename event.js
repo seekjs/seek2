@@ -20,6 +20,7 @@
 		@parem Scope 作用域 object
 	*/
 	exports.parse = function (box, Scope) {
+		log({Scope});
         var elements = [].slice.call(box.querySelectorAll("[data-event],[data-enter]"));
         box.dataset && (box.dataset.event||box.dataset.enter) && elements.push(box);
 		var enter;
