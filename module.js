@@ -52,14 +52,14 @@
             if(mid.startsWith(k)){
                 var o = ns[k];
                 mid = mid.replace(k, o.path);
-                if(o.type){
+                if(o.type && mid.includes(".")===false){
                     mid += o.type;
                 }
                 isNs = true;
                 break;
             }
         }
-        if(!isNs && !/^\//.test(mid)){
+        if(!isNs && !/^[\.\/]/.test(mid)){
             if(mid.startsWith("seek-plugin-")) {
                 mid = `/node_modules/${mid}/index.sk`;
             }else{
@@ -110,6 +110,8 @@
                 var code = getCode(path);
                 if(path.endsWith(".js")) {
                     modules[mid] = parseModule(code, file);
+                }else if(path.endsWith(".json")) {
+                    modules[mid] = JSON.parse(code);
                 }else {
                     modules[mid] = code;
                 }
