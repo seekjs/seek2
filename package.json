@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:likaituan/seekjs.git"
+    "url": "git@github.com:seekjs-framework/seekjs.git"
   },
   "scripts": {
     "genui": "node bin/genui.js"
