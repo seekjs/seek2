@@ -1,17 +1,17 @@
 {
-    "name": "seekjs",
-    "version": "2.0.8",
-    "description": "seekjs前端框架",
-    "main": "./module.js",
-    "author": {
-        "name": "Li",
-        "email": "61114579@qq.com"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git@github.com:likaituan/seekjs.git"
-    },
-    "scripts": {
-        "genui": "node bin/genui.js"
-    }
+  "name": "seekjs",
+  "version": "2.0.9",
+  "description": "seekjs前端框架",
+  "main": "./module.js",
+  "author": {
+    "name": "Li",
+    "email": "61114579@qq.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:likaituan/seekjs.git"
+  },
+  "scripts": {
+    "genui": "node bin/genui.js"
+  }
 }
