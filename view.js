@@ -23,7 +23,7 @@ class View {
 
     //切换
     toggle () {
-        this.ui.style.display = View.ui.style.display=="none" ? "block" : "none";
+        this.ui.style.display = this.ui.style.display=="none" ? "block" : "none";
     }
 
     //显示
@@ -36,6 +36,11 @@ class View {
         this.ui.style.display = "none";
     }
 
+    render () {
+        this.app.render(this);
+    };
+
+    /*
     render () {
         if(this.type=="main") {
             this.app.render(this);
@@ -53,13 +58,11 @@ class View {
             data_bind.parse(this.ui, this);
             data_part.parse(this.ui, this);
         }
-    }
+    }*/
 
     up2model () {
         data_bind.up2model(this.ui, this);
     }
 }
-
-
 
 module.exports = View;

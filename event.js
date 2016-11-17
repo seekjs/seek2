@@ -20,7 +20,6 @@
 		@parem Scope 作用域 object
 	*/
 	exports.parse = function (box, Scope) {
-		log({Scope});
         var elements = [].slice.call(box.querySelectorAll("[data-event],[data-enter]"));
         box.dataset && (box.dataset.event||box.dataset.enter) && elements.push(box);
 		var enter;
@@ -49,12 +48,16 @@
 					throw "method [" + m + "] is no define on the " + pos;
 				}
 				var args = ma[1] ? ma[1].split(",") : [];
-				ele.addEventListener(e, function (event) {
+
+				var fun = `fun_${e}`;
+				ele[fun] && ele.removeEventListener(e, ele[fun]);
+				ele[fun] = function (event) {
 					Scope.element = ele;
 					Scope.event = event;
 					Scope.up2model && Scope.up2model();
 					scope[m].apply(scope, args);
-				});
+				};
+				ele.addEventListener(e, ele[fun]);
 			});
 		});
 

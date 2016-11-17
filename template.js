@@ -135,6 +135,7 @@
 		compileLiteral(tmpCode);
 
 		jscode.push('return buf.join("");');
+		jscode.push(``)
 		jscode = jscode.join("\n");
         //console.log(jscode);
         return jscode;

@@ -4,10 +4,8 @@
  */
 
 //解析part
-exports.parse = function(box, view, View, app){
-    log({box, dp:box.querySelectorAll("[data-part]"), view});
+exports.parse = function(box, view, View, app, data_bind, event, chkSubView){
     [...box.querySelectorAll("[data-part]")].forEach(x=>{
-        log({x});
         var o = view[x.dataset.part] = new View(app);
         Object.assign(o, {
             id: x.dataset.part,
@@ -21,9 +19,11 @@ exports.parse = function(box, view, View, app){
                 html = div.querySelector(`[data-part=${o.id}`).innerHTML;
                 div = null;
                 o.box.innerHTML = html;
-                return html;
+
+                data_bind.parse(o.ui, view);
+                event.parse(o.ui, view);
+                chkSubView();
             }
         });
     });
-    log({view});
 };
