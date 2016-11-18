@@ -15,11 +15,13 @@ var pipe = require("sys.pipe");
 var view;
 var _view;
 var mainView;
+var subViewList = [];
 var cfg = {};
 
 
 //解析Hash
 var parseHash = function() {
+    subViewList = [];
     _view = new View(app);
     var uri = location.hash && location.hash.slice(1) || app.iniPage;
     Object.assign(_view, {
@@ -35,7 +37,7 @@ var parseURI = function(){
     _view.query = urlParse(_view.uri, true).query || null;
     var params = _view.uri.split("?")[0].split("/");
     _view.page = params.shift();
-    log(`step1.parseURI: page=${_view.page} type=${_view.type}`);
+    log(`step1.parseURI: uri=${_view.uri} type=${_view.type}`);
     _view.params = {};
     if(params.length % 2){
          _view.params.id = params.shift();
@@ -81,6 +83,10 @@ var parseSkPage = function(){
 
     css && parseCss(css);
     view = new View(app);
+    Object.assign(view, _view);
+    if(view.type=="main"){
+        mainView = view;
+    }
     view.plugin = {};
     if(!view.getHTML) {
         js += `\n\nexports.getHTML = function($){ ${template.getJsCode(tp || "")} };`;
@@ -92,9 +98,8 @@ var parseSkPage = function(){
 
 //解析view
 var parseView = function () {
-    Object.assign(view, _view);
     view.type!="plugin" && pipe.mergeObj(view, app.viewEx, true);
-    log(`step3.parseView: page=${view.page}`);
+    log(`step3.parseView: uri=${view.uri}`);
 
     view.go = app.go;
     app.onInit && app.onInit(view);
@@ -118,15 +123,12 @@ var parseCss = function (code) {
 
 //解析HTML
 var parseHTML = function () {
-    log(`step4.parseHTML: page=${view.page}`);
+    log(`step4.parseHTML: uri=${view.uri}`);
     app.onRenderBefore && app.onRenderBefore(view);
     view.onRenderBefore && view.onRenderBefore();
 
     var model = view.model || view;
     var html = view.getHTML.call(model, pipe);
-    if(view.type=="main"){
-        mainView = view;
-    }
     if(view.type=="plugin") {
         view.box.insertAdjacentHTML("beforeEnd", html);
         view.ui = view.box.lastElementChild;
@@ -134,25 +136,36 @@ var parseHTML = function () {
         view.box.innerHTML = html;
         view.ui = view.box.firstElementChild;
     }
-
     view.display===false && view.hide();
 
+    //因为页面刚开始usePlugin的时候拿不到view.ui, 这时补上
+    for(var k in view.plugin) {
+        if(view.plugin[k].type=="plugin") {
+            view.plugin[k].box = view.plugin[k].box || view.ui;
+        }
+    }
+
     data_bind.parse(view.box, view);
-    //data_part.parse(box, view);
     parsePart(view.ui, view);
     event.parse(view.ui, view);
-    log({page:view.page});
+    chkSubView(view, view.ui);
 
     app.onRender && app.onRender(view);
     view.onRender && view.onRender();
 
-    chkSubView(view.ui);
+    if(subViewList.length>0) {
+        loadSubView();
+    }else if(mainView){
+        app.onLoad && app.onLoad(view);
+        view.onLoad && view.onLoad();
+        log("end: load complete!")
+    }
 };
 
 //解析part
 var parsePart = function(box, view){
     var partList = [...box.querySelectorAll("[data-part]")];
-    log(`step5.parsePart: page=${view.page} part.length=${partList.length}`);
+    log(`step5.parsePart: part=[${partList.map(x=>x.dataset.part)}]`);
     partList.forEach(x=>{
         var o = view[x.dataset.part] = new View(app);
         Object.assign(o, {
@@ -173,25 +186,27 @@ var parsePart = function(box, view){
                 event.parse(o.ui, o.parent);
             }
         });
-        data_bind.parse(o.ui, o.parent);
-        event.parse(o.ui, o.parent);
     });
 };
 
-var chkSubView = function(box){
-    var subViewList = [...box.querySelectorAll("[data-view]")];
-    log(`step6.chkSubView: page=${view.page} subview.length=${subViewList.length}\n\n`);
-    subViewList.forEach(x=>{
-        _view = new View(app);
-        Object.assign(_view, {
+var loadSubView = function(){
+    _view = new View(app);
+    Object.assign(_view, subViewList.shift());
+    parseURI();
+};
+
+var chkSubView = function(view, box){
+    var viewList = [...box.querySelectorAll("[data-view]")];
+    viewList.forEach(x=>{
+        subViewList.push({
             type: "sub",
             box: x,
             root: mainView,
             parent: view,
             uri: x.dataset.view
         });
-        parseURI();
     });
+    log(`step6.chkSubView: subview=[${viewList.map(x=>x.dataset.view)}]\n\n`);
 };
 
 
@@ -216,18 +231,24 @@ app.addPipe = function(pipeEx){
 };
 
 //使用插件
-app.usePlugin = function(pluginName, ops={}){
-    _view = (view||app).plugin[pluginName] = new View(app);
-    Object.assign(_view, {
-        type: ops.type || "plugin",
-        box: ops.box || document.body,
+app.usePlugin = function(pluginName, ops={}, view){
+    var plugin = (view||app).plugin[pluginName] =  {
+        type: "plugin",
+        box: !view && document.body,
         id: pluginName.split("-").pop(),
         uri: pluginName,
         url: `/node_modules/${pluginName}/index.sk`,
-        display: ops.display
-    });
-    log(`step0: app.usePlugin: ${_view.uri}`);
-    parseURI();
+        display: ops.display,
+        data: ops.data || {},
+        options: ops
+    };
+    if(view){
+        subViewList.push(plugin);
+    }else{
+        _view = new View(app);
+        Object.assign(_view, plugin);
+        parseURI();
+    }
 };
 
 //初始化
