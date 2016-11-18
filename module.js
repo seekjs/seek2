@@ -27,7 +27,7 @@
     };
 
     //获取代码
-    var getCode = function (path) {
+    var getCode = seekjs.getCode = function (path) {
         var xhr = new XMLHttpRequest();
         xhr.open("GET", path, false);
         xhr.send();

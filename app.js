@@ -70,9 +70,9 @@ var parseSkPage = function(){
             diy[key] = val;
         });
     }else{
-        css = cfg.css && require(`${cfg.css+_view.page}.css`) || "";
-        tp = cfg.tp && require(`${cfg.tp+_view.page}.html`) || "";
-        js = cfg.js && require(`${cfg.js+_view.page}.js`) || "";
+        css = cfg.css && seekjs.getCode(`${cfg.css+_view.page}.css`) || "";
+        tp = cfg.tp && seekjs.getCode(`${cfg.tp+_view.page}.html`) || "";
+        js = cfg.js && seekjs.getCode(`${cfg.js+_view.page}.js`) || "";
     }
     log(`step2.parseSkPage: url=${_view.url}`);
     if(!css && !tp && !js && Object.keys(diy).length==0){
