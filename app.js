@@ -44,7 +44,9 @@ var parseURI = function(ops){
     while(params.length){
         _view.params[params.shift()] = params.shift();
     }
-    _view.url = _view.url || `${cfg.page}${_view.page}.sk`;
+    if(cfg.page && !_view.url) {
+        _view.url = `${cfg.page+_view.page}.sk`;
+    }
 
     if(window.modules){
         view = new View(app);
@@ -68,9 +70,9 @@ var parseSkPage = function(){
             diy[key] = val;
         });
     }else{
-        css = cfg.css && require(`${cfg.css}/${_view.page}.css`) || "";
-        tp = cfg.tp && require(`${cfg.tp}/${_view.page}.html`) || "";
-        js = cfg.js && require(`${cfg.js}/${_view.page}.js`) || "";
+        css = cfg.css && require(`${cfg.css+_view.page}.css`) || "";
+        tp = cfg.tp && require(`${cfg.tp+_view.page}.html`) || "";
+        js = cfg.js && require(`${cfg.js+_view.page}.js`) || "";
     }
     log(`step2.parseSkPage: url=${_view.url}`);
     if(!css && !tp && !js && Object.keys(diy).length==0){
