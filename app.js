@@ -22,18 +22,17 @@ var cfg = {};
 //解析Hash
 var parseHash = function() {
     subViewList = [];
-    _view = new View(app);
     var uri = location.hash && location.hash.slice(1) || app.iniPage;
-    Object.assign(_view, {
+    parseURI({
         type: "main",
         box: app.box,
         uri: uri
     });
-    parseURI();
 };
 
 //解析Hash
-var parseURI = function(){
+var parseURI = function(ops){
+    _view = ops;
     _view.query = urlParse(_view.uri, true).query || null;
     var params = _view.uri.split("?")[0].split("/");
     _view.page = params.shift();
@@ -84,10 +83,20 @@ var parseSkPage = function(){
     css && parseCss(css);
     view = new View(app);
     Object.assign(view, _view);
+    //重新索引begin
+    if(view.type=="plugin") {
+        if(view.parent) {
+            view.parent.plugin[view.id] = view;
+        }else{
+            app.plugin[view.id] = view;
+        }
+    }
+    //重新索引end
     if(view.type=="main"){
         mainView = view;
     }
     view.plugin = {};
+
     if(!view.getHTML) {
         js += `\n\nexports.getHTML = function($){ ${template.getJsCode(tp || "")} };`;
     }
@@ -130,6 +139,9 @@ var parseHTML = function () {
     var model = view.model || view;
     var html = view.getHTML.call(model, pipe);
     if(view.type=="plugin") {
+        if(view.ui){
+            view.box.removeChild(view.ui);
+        }
         view.box.insertAdjacentHTML("beforeEnd", html);
         view.ui = view.box.lastElementChild;
     }else{
@@ -190,9 +202,8 @@ var parsePart = function(box, view){
 };
 
 var loadSubView = function(){
-    _view = new View(app);
-    Object.assign(_view, subViewList.shift());
-    parseURI();
+    var subView = subViewList.shift();
+    parseURI(subView);
 };
 
 var chkSubView = function(view, box){
@@ -232,7 +243,7 @@ app.addPipe = function(pipeEx){
 
 //使用插件
 app.usePlugin = function(pluginName, ops={}, view){
-    var plugin = (view||app).plugin[pluginName] =  {
+    var plugin = {
         type: "plugin",
         box: !view && document.body,
         id: pluginName.split("-").pop(),
@@ -240,14 +251,15 @@ app.usePlugin = function(pluginName, ops={}, view){
         url: `/node_modules/${pluginName}/index.sk`,
         display: ops.display,
         data: ops.data || {},
-        options: ops
+        options: ops,
+        parent: view,
+        root: mainView
     };
+    (view||app).plugin[plugin.id] = plugin;
     if(view){
         subViewList.push(plugin);
     }else{
-        _view = new View(app);
-        Object.assign(_view, plugin);
-        parseURI();
+        parseURI(plugin);
     }
 };
 
