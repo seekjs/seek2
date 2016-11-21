@@ -159,7 +159,7 @@ var parseHTML = function () {
         }
     }
 
-    data_bind.parse(view.box, view);
+    data_bind.parse(view.ui, view);
     parsePart(view.ui, view);
     event.parse(view.ui, view);
     chkSubView(view, view.ui);
