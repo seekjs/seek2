@@ -16,8 +16,12 @@
         for (var k in _ns) {
             var item = _ns[k];
             ns[k] = item.path ? item : {path:item, type:".js"};
+            if(seekjs.isNode){
+                ns[k].path = (seekjs.rootPath + ns[k].path).replace("//","/");
+            }
         }
         alias = ops.alias || {};
+        log({ns,alias});
     };
 
     //加载CSS文件(only浏览器)
@@ -63,13 +67,11 @@
             }
         }
         if(!isNs && !/^[\.\/]/.test(mid)){
-            if(mid.startsWith("seek-plugin-")) {
-                mid = `/node_modules/${mid}/index.sk`;
-            }else{
-                var jsonStr = seekjs.getCode(`/node_modules/${mid}/package.json`);
-                var pk = seekjs.parseModule(`module.exports=${jsonStr}`);
-                mid = `/node_modules/${mid}/${pk.main}`;
-            }
+            var prefix = seekjs.isNode ? seekjs.rootPath.replace(/\/$/,"") : "";
+            var jsonStr = seekjs.getCode(`${prefix}/node_modules/${mid}/package.json`);
+            var pk = seekjs.parseModule(`module.exports=${jsonStr}`);
+            var main = pk.main || "index.js";
+            mid = `${prefix}/node_modules/${mid}/${main}`;
         }
         if(!/\.\w+$/.test(mid)){
             mid += ".js";
@@ -108,7 +110,7 @@
             throw "call times is too more!";
         }
         if (!modules[mid]) {
-            var path = getPath(mid);
+            var path = seekjs.getPath(mid);
             var file = path.split("/").pop();
             if (path.endsWith(".css")) {
                 modules[mid] = path;
@@ -168,4 +170,4 @@
     if(seekjs.isNode) {
         module.exports = seekjs;
     }
-}(typeof(global)&&global ||  typeof(window)&&window || {});
+}(typeof(global)=="object"&&global ||  typeof(window)=="object"&&window || {});

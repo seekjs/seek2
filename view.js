@@ -10,9 +10,41 @@ var data_bind = require("sys.data_bind");
 var data_part = require("sys.data_part");
 
 class View {
-    constructor(app) {
+    constructor(app, ops={}) {
         this.app = app;
+
+        /*
+        //使用插件
+        this.usePlugin = (pluginName, ops={}) => {
+            this.app.usePlugin(pluginName, ops, this);
+        };
+
+        //切换
+        this.toggle = () => {
+            this.ui.style.display = this.ui.style.display=="none" ? "block" : "none";
+        };
+
+        //显示
+        this.show = () => {
+            this.ui.style.display = "block";
+        };
+
+        //隐藏
+        this.hide = () => {
+            this.ui.style.display = "none";
+        };
+
+        this.render = () => {
+            this.app.render(this);
+        };
+
+        this.up2model = () => {
+            data_bind.up2model(this.ui, this);
+        };*/
+
+        Object.assign(this, ops);
     }
+
 
     //使用插件
     usePlugin (pluginName, ops={}) {

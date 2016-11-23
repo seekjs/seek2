@@ -11,6 +11,8 @@ var data_part = require("sys.data_part");
 var lang = require("sys.lang");
 var template = require("sys.template");
 var pipe = require("sys.pipe");
+//pipe.local = localStorage;
+//pipe.session = sessionStorage;
 
 var view;
 var _view;
@@ -33,6 +35,7 @@ var parseHash = function() {
 //解析Hash
 var parseURI = function(ops){
     _view = ops;
+    _view.app = app;
     _view.query = urlParse(_view.uri, true).query || null;
     var params = _view.uri.split("?")[0].split("/");
     _view.page = params.shift();
@@ -48,43 +51,53 @@ var parseURI = function(ops){
         _view.url = `${cfg.page+_view.page}.sk`;
     }
 
-    if(window.modules){
-        view = new View(app);
-        Object.assign(view, viewrequire("page."+_view.page));
-        parseView();
-    }else {
+    if(window.modules) {
+        var mid = _view.page.startsWith("seekjs-plugin-") ? _view.page : "page."+_view.page;
+        _view = Object.assign(require(mid), _view);
         parseSkPage();
+    }else{
+        loadSkPage();
     }
 };
 
 //解析.sk页面
-var parseSkPage = function(){
-    var css,tp,js;
+var loadSkPage = function() {
+    var css, tp, js;
     var diy = {};
-    if(_view.url) {
+    if (_view.url) {
         var code = require(_view.url);
         css = /<style.*?>([\s\S]+?)<\/style>/.test(code) && RegExp.$1;
         tp = /<template.*?>([\s\S]+?)<\/template>/.test(code) && RegExp.$1;
         js = /<script.*?>([\s\S]+?)<\/script>/.test(code) && RegExp.$1;
-        code.replace(/<:(.*?)>([\s\S]+?)<\/:*?>/g, function(_,key,val){
+        code.replace(/<:(.*?)>([\s\S]+?)<\/:*?>/g, function (_, key, val) {
             diy[key] = val;
         });
-    }else{
-        css = cfg.css && seekjs.getCode(`${cfg.css+_view.page}.css`) || "";
-        tp = cfg.tp && seekjs.getCode(`${cfg.tp+_view.page}.html`) || "";
-        js = cfg.js && seekjs.getCode(`${cfg.js+_view.page}.js`) || "";
+    } else {
+        css = cfg.css && seekjs.getCode(`${cfg.css + _view.page}.css`) || "";
+        tp = cfg.tp && seekjs.getCode(`${cfg.tp + _view.page}.html`) || "";
+        js = cfg.js && seekjs.getCode(`${cfg.js + _view.page}.js`) || "";
     }
     log(`step2.parseSkPage: url=${_view.url}`);
-    if(!css && !tp && !js && Object.keys(diy).length==0){
+    if (!css && !tp && !js && Object.keys(diy).length == 0) {
         tp = code.trim();
     }
-    if(!js && !tp){
+    if (!js && !tp) {
         throw `the "${file}" page mush has a script or template`
     }
-
+    _view.diy = diy;
     css && parseCss(css);
-    view = new View(app);
-    Object.assign(view, _view);
+    if (/getHTML/.test(js)==false) {
+        js += `\n\nexports.getHTML = function($){ ${template.getJsCode(tp || "")} };`;
+    }
+    _view = new View(app, _view);
+    view = seekjs.parseModule(js, _view.page + ".sk", _view);
+    parseSkPage();
+};
+
+
+//解析.sk页面
+var parseSkPage = function(){
+
     //重新索引begin
     if(view.type=="plugin") {
         if(view.parent) {
@@ -98,12 +111,6 @@ var parseSkPage = function(){
         mainView = view;
     }
     view.plugin = {};
-
-    if(!view.getHTML) {
-        js += `\n\nexports.getHTML = function($){ ${template.getJsCode(tp || "")} };`;
-    }
-    view = parseModule(js,_view.page+".sk", view);
-    view.diy = diy;
     parseView();
 };
 
@@ -244,21 +251,21 @@ app.addPipe = function(pipeEx){
 };
 
 //使用插件
-app.usePlugin = function(pluginName, ops={}, view){
+app.usePlugin = function(pluginName, ops={}, __view){
     var plugin = {
         type: "plugin",
-        box: !view && document.body,
+        box: !__view && document.body,
         id: pluginName.split("-").pop(),
         uri: pluginName,
         url: `/node_modules/${pluginName}/index.sk`,
         display: ops.display,
         data: ops.data || {},
         options: ops,
-        parent: view,
+        parent: __view,
         root: mainView
     };
-    (view||app).plugin[plugin.id] = plugin;
-    if(view){
+    (__view&&__view.ui&&__view||app).plugin[plugin.id] = plugin;
+    if(__view&&__view.ui){
         subViewList.push(plugin);
     }else{
         parseURI(plugin);
