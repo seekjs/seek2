@@ -15,11 +15,9 @@ var pipe = require("sys.pipe");
 //pipe.session = sessionStorage;
 
 var view;
-var _view;
 var mainView;
 var subViewList = [];
 var cfg = {};
-
 
 //解析Hash
 var parseHash = function() {
@@ -34,38 +32,40 @@ var parseHash = function() {
 
 //解析Hash
 var parseURI = function(ops){
-    _view = ops;
-    _view.app = app;
-    _view.query = urlParse(_view.uri, true).query || null;
-    var params = _view.uri.split("?")[0].split("/");
-    _view.page = params.shift();
-    log(`step1.parseURI: uri=${_view.uri} type=${_view.type}`);
-    _view.params = {};
+    view = new View(ops, app);
+    if(view.type=="main"){
+        mainView = view;
+    }
+    view.query = urlParse(view.uri, true).query || null;
+    var params = view.uri.split("?")[0].split("/");
+    view.page = params.shift();
+    log(`step1.parseURI: uri=${view.uri} type=${view.type}`);
+    view.params = {};
     if(params.length % 2){
-         _view.params.id = params.shift();
+         view.params.id = params.shift();
     }
     while(params.length){
-        _view.params[params.shift()] = params.shift();
+        view.params[params.shift()] = params.shift();
     }
-    if(cfg.page && !_view.url) {
-        _view.url = `${cfg.page+_view.page}.sk`;
+    if(cfg.page && !view.url) {
+        view.url = `${cfg.page+view.page}.sk`;
     }
 
     if(window.modules) {
-        var mid = _view.page.startsWith("seekjs-plugin-") ? _view.page : "page."+_view.page;
-        _view = Object.assign(require(mid), _view);
-        parseSkPage();
+        var mid = view.page.startsWith("seekjs-plugin-") ? view.page : "page."+view.page;
+        require(mid, view);
+        parseView();
     }else{
-        loadSkPage();
+        parseSkPage();
     }
 };
 
 //解析.sk页面
-var loadSkPage = function() {
+var parseSkPage = function() {
     var css, tp, js;
     var diy = {};
-    if (_view.url) {
-        var code = require(_view.url);
+    if (view.url) {
+        var code = require(view.url);
         css = /<style.*?>([\s\S]+?)<\/style>/.test(code) && RegExp.$1;
         tp = /<template.*?>([\s\S]+?)<\/template>/.test(code) && RegExp.$1;
         js = /<script.*?>([\s\S]+?)<\/script>/.test(code) && RegExp.$1;
@@ -73,44 +73,23 @@ var loadSkPage = function() {
             diy[key] = val;
         });
     } else {
-        css = cfg.css && seekjs.getCode(`${cfg.css + _view.page}.css`) || "";
-        tp = cfg.tp && seekjs.getCode(`${cfg.tp + _view.page}.html`) || "";
-        js = cfg.js && seekjs.getCode(`${cfg.js + _view.page}.js`) || "";
+        css = cfg.css && seekjs.getCode(`${cfg.css + view.page}.css`) || "";
+        tp = cfg.tp && seekjs.getCode(`${cfg.tp + view.page}.html`) || "";
+        js = cfg.js && seekjs.getCode(`${cfg.js + view.page}.js`) || "";
     }
-    log(`step2.parseSkPage: url=${_view.url}`);
+    log(`step2.parseSkPage: url=${view.url}`);
     if (!css && !tp && !js && Object.keys(diy).length == 0) {
         tp = code.trim();
     }
     if (!js && !tp) {
         throw `the "${file}" page mush has a script or template`
     }
-    _view.diy = diy;
+    //view.diy = diy;
     css && parseCss(css);
-    if (/getHTML/.test(js)==false) {
+    if (/exports\.getHTML\s*=/.test(js)==false) {
         js += `\n\nexports.getHTML = function($){ ${template.getJsCode(tp || "")} };`;
     }
-    _view = new View(app, _view);
-    view = seekjs.parseModule(js, _view.page + ".sk", _view);
-    parseSkPage();
-};
-
-
-//解析.sk页面
-var parseSkPage = function(){
-
-    //重新索引begin
-    if(view.type=="plugin") {
-        if(view.parent) {
-            view.parent.plugin[view.id] = view;
-        }else{
-            app.plugin[view.id] = view;
-        }
-    }
-    //重新索引end
-    if(view.type=="main"){
-        mainView = view;
-    }
-    view.plugin = {};
+    seekjs.parseModule(js, view.page + ".sk", view);
     parseView();
 };
 
@@ -119,7 +98,6 @@ var parseView = function () {
     view.type!="plugin" && pipe.mergeObj(view, app.viewEx, true);
     log(`step3.parseView: uri=${view.uri}`);
 
-    view.go = app.go;
     app.onInit && app.onInit(view);
 
     if(view.onInit){
@@ -158,13 +136,6 @@ var parseHTML = function () {
         view.ui = view.box.firstElementChild;
     }
     view.display===false && view.hide();
-
-    //因为页面刚开始usePlugin的时候拿不到view.ui, 这时补上
-    for(var k in view.plugin) {
-        if(view.plugin[k].type=="plugin") {
-            view.plugin[k].box = view.plugin[k].box || view.ui;
-        }
-    }
 
     data_bind.parse(view.ui, view);
     parsePart(view.ui, view);
@@ -226,7 +197,11 @@ var chkSubView = function(view, box){
             uri: x.dataset.view
         });
     });
-    log(`step6.chkSubView: subview=[${viewList.map(x=>x.dataset.view)}]\n\n`);
+    for(var k in view.plugin){
+        view.plugin[k].box = view.ui;
+        subViewList.push(view.plugin[k]);
+    }
+    log(`step6.chkSubView: subview=[${subViewList.map(x=>x.uri)}]\n\n`);
 };
 
 
@@ -264,12 +239,8 @@ app.usePlugin = function(pluginName, ops={}, __view){
         parent: __view,
         root: mainView
     };
-    (__view&&__view.ui&&__view||app).plugin[plugin.id] = plugin;
-    if(__view&&__view.ui){
-        subViewList.push(plugin);
-    }else{
-        parseURI(plugin);
-    }
+    (__view||app).plugin[plugin.id] = plugin;
+    !__view && parseURI(plugin);
 };
 
 //初始化
@@ -281,15 +252,6 @@ app.init  = function (page) {
     app.iniPage = page;
     parseHash();
     window.onhashchange = parseHash;
-};
-
-//跳转
-app.go = function (page) {
-    if(/^https?:\/\//.test(page)){
-        window.open(page);
-    }else{
-        location.hash = page;
-    }
 };
 
 app.render = function(currentView){

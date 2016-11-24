@@ -21,7 +21,6 @@
             }
         }
         alias = ops.alias || {};
-        log({ns,alias});
     };
 
     //加载CSS文件(only浏览器)
