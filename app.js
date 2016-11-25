@@ -245,6 +245,10 @@ app.usePlugin = function(pluginName, ops={}, __view){
 
 //初始化
 app.init  = function (page) {
+    if(!cfg.page && !cfg.js){
+        console.error(`please use "app.config" method set a sk page directory or a js directory before!`);
+        return;
+    }
     document.body.insertAdjacentHTML("afterBegin", '<div class="sk-app"></div>');
     app.box = document.body.firstElementChild;
 
