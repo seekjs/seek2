@@ -50,9 +50,7 @@ var parseURI = function(ops){
     while(params.length){
         view.params[params.shift()] = params.shift();
     }
-    if(cfg.page && !view.url) {
-        view.url = `${cfg.page+view.page}.sk`;
-    }
+    view.url = view.url || cfg.page && `${cfg.page+view.page}.sk`;
 
     if(window.modules) {
         var mid = view.page.startsWith("seekjs-plugin-") ? view.page : "page."+view.page;
@@ -65,34 +63,45 @@ var parseURI = function(ops){
 
 //解析.sk页面
 var parseSkPage = function() {
-    var css, tp, js;
+    var cssFile, tpFile, jsFile;
+    var cssCode, tpCode, jsCode;
     var diy = {};
-    if (view.url) {
+    if (view.url && view.url.endsWith(".sk")) {
         var code = require(view.url);
-        css = /<style.*?>([\s\S]+?)<\/style>/.test(code) && RegExp.$1;
-        tp = /<template.*?>([\s\S]+?)<\/template>/.test(code) && RegExp.$1;
-        js = /<script.*?>([\s\S]+?)<\/script>/.test(code) && RegExp.$1;
+        cssCode = /<style.*?>([\s\S]+?)<\/style>/.test(code) && RegExp.$1;
+        tpCode = /<template.*?>([\s\S]+?)<\/template>/.test(code) && RegExp.$1;
+        jsCode = /<script.*?>([\s\S]+?)<\/script>/.test(code) && RegExp.$1;
         code.replace(/<:(.*?)>([\s\S]+?)<\/:*?>/g, function (_, key, val) {
             diy[key] = val;
         });
     } else {
-        css = cfg.css && seekjs.getCode(`${cfg.css + view.page}.css`) || "";
-        tp = cfg.tp && seekjs.getCode(`${cfg.tp + view.page}.html`) || "";
-        js = cfg.js && seekjs.getCode(`${cfg.js + view.page}.js`) || "";
+        if(view.type=="plugin"){
+            jsFile = view.url;
+            cssFile = jsFile.replace(/\.js$/,".css");
+            tpFile = jsFile.replace(/\.js$/,".html");
+        }else {
+            cssFile = cfg.css && `${cfg.css + view.page}.css`;
+            jsFile = cfg.js && `${cfg.js + view.page}.js`;
+            tpFile = cfg.tp && `${cfg.tp + view.page}.html`;
+        }
+        cssCode = cssFile && seekjs.getCode(cssFile) || "";
+        tpCode = tpFile && seekjs.getCode(tpFile) || "";
+        jsCode = jsFile && seekjs.getCode(jsFile) || "";
     }
     log(`step2.parseSkPage: url=${view.url}`);
-    if (!css && !tp && !js && Object.keys(diy).length == 0) {
-        tp = code.trim();
+    if (!cssCode && !tpCode && !jsCode && Object.keys(diy).length == 0) {
+        tpCode = code.trim();
     }
-    if (!js && !tp) {
+    if (!jsCode && !tpCode) {
         throw `the "${file}" page mush has a script or template`
     }
     //view.diy = diy;
-    css && parseCss(css);
-    if (/exports\.getHTML\s*=/.test(js)==false) {
-        js += `\n\nexports.getHTML = function($){ ${template.getJsCode(tp || "")} };`;
+    cssCode && parseCss(cssCode);
+    if (/exports\.getHTML\s*=/.test(jsCode)==false) {
+        jsCode += `\n\nexports.getHTML = function($){ ${template.getJsCode(tpCode || "")} };`;
     }
-    seekjs.parseModule(js, view, `page.${view.page}.sk`);
+    var fileName = view.type=="plugin" && `${view.page}.sk` || `page.${view.page}.sk`;
+    seekjs.parseModule(jsCode, view, fileName);
     parseView();
 };
 
@@ -235,9 +244,10 @@ app.usePlugin = function(pluginName, ops={}, _view){
         owner,
         type: "plugin",
         box: !_view && document.body,
-        id: pluginName.split("-").pop(),
+        url: seekjs.getPath(pluginName),
         uri: pluginName,
-        url: `/node_modules/${pluginName}/index.sk`,
+        name: pluginName,
+        id: pluginName.split("-").pop(),
         display: ops.display,
         data: ops.data || {},
         options: ops,
