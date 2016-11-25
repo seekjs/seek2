@@ -36,6 +36,9 @@ var parseURI = function(ops){
     if(view.type=="main"){
         mainView = view;
     }
+    if(view.type=="plugin"){
+        view.owner.plugin[view.id] = view;
+    }
     view.query = urlParse(view.uri, true).query || null;
     var params = view.uri.split("?")[0].split("/");
     view.page = params.shift();
@@ -89,7 +92,7 @@ var parseSkPage = function() {
     if (/exports\.getHTML\s*=/.test(js)==false) {
         js += `\n\nexports.getHTML = function($){ ${template.getJsCode(tp || "")} };`;
     }
-    seekjs.parseModule(js, view.page + ".sk", view);
+    seekjs.parseModule(js, view, `page.${view.page}.sk`);
     parseView();
 };
 
@@ -226,21 +229,23 @@ app.addPipe = function(pipeEx){
 };
 
 //使用插件
-app.usePlugin = function(pluginName, ops={}, __view){
+app.usePlugin = function(pluginName, ops={}, _view){
+    var owner =  _view || app;
     var plugin = {
+        owner,
         type: "plugin",
-        box: !__view && document.body,
+        box: !_view && document.body,
         id: pluginName.split("-").pop(),
         uri: pluginName,
         url: `/node_modules/${pluginName}/index.sk`,
         display: ops.display,
         data: ops.data || {},
         options: ops,
-        parent: __view,
+        parent: _view,
         root: mainView
     };
-    (__view||app).plugin[plugin.id] = plugin;
-    !__view && parseURI(plugin);
+    owner.plugin[plugin.id] = plugin;
+    !_view && parseURI(plugin);
 };
 
 //初始化

@@ -81,7 +81,7 @@
     var modules = {};
 
     //解析模块
-    seekjs.parseModule = function (code, file, iniExports) {
+    seekjs.parseModule = function (code, iniExports, file) {
         var require = function (mid) {
             return seekjs.getModule(mid);
         };
