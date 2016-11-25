@@ -117,7 +117,7 @@
             }else {
                 var code = seekjs.getCode(path);
                 if(path.endsWith(".js")) {
-                    modules[mid] = seekjs.parseModule(code, file);
+                    modules[mid] = seekjs.parseModule(code,null,file);
                 }else if(path.endsWith(".json")) {
                     modules[mid] = JSON.parse(code);
                 }else {
