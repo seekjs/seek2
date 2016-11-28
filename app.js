@@ -50,14 +50,17 @@ var parseURI = function(ops){
     while(params.length){
         view.params[params.shift()] = params.shift();
     }
-    view.url = view.url || cfg.page && `${cfg.page+view.page}.sk`;
-
     if(window.modules) {
         var mid = view.page.startsWith("seekjs-plugin-") ? view.page : "page."+view.page;
         require(mid, view);
         parseView();
     }else{
-        parseSkPage();
+        if(view.type=="plugin"){
+            view.url = seekjs.getPath(view.name);
+        }else{
+            view.url = cfg.page && `${cfg.page+view.page}.sk`
+        }
+        parseView();
     }
 };
 
@@ -244,7 +247,6 @@ app.usePlugin = function(pluginName, ops={}, _view){
         owner,
         type: "plugin",
         box: !_view && document.body,
-        url: seekjs.getPath(pluginName),
         uri: pluginName,
         name: pluginName,
         id: pluginName.split("-").pop(),
