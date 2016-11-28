@@ -60,7 +60,7 @@ var parseURI = function(ops){
         }else{
             view.url = cfg.page && `${cfg.page+view.page}.sk`
         }
-        parseView();
+        parseSkPage();
     }
 };
 
