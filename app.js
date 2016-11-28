@@ -138,7 +138,7 @@ var parseHTML = function () {
     var model = view.model || view;
     var html = view.getHTML.call(model, pipe);
     if(view.type=="plugin") {
-        if(view.ui){
+        if(view.ui && view.ui.parent==view.box){
             view.box.removeChild(view.ui);
         }
         view.box.insertAdjacentHTML("beforeEnd", html);
