@@ -5,9 +5,13 @@ var getData = function(data){
 module.exports = function (ops) {
     var data = getData(ops.data);
     var xhr = new XMLHttpRequest();
-    xhr.open("POST", ops.url, true);
+    xhr.open(ops.type||"POST", ops.url, true);
     xhr.onload = function(){
-        ops.success(xhr.responseText);
+        var text = xhr.responseText;
+        if(ops.dataType=="json"){
+            text = new Function(`return ${text};`)();
+        }
+        ops.success(text);
     };
     xhr.send(data);
 };
