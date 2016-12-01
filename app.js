@@ -26,7 +26,7 @@ var parseHash = function() {
     parseURI({
         type: "main",
         box: app.box,
-        uri: uri
+        uri: uri,
     });
 };
 
@@ -51,8 +51,7 @@ var parseURI = function(ops){
         view.params[params.shift()] = params.shift();
     }
     if(window.modules) {
-        var mid = view.page.startsWith("seekjs-plugin-") ? view.page : "page."+view.page;
-        require(mid, view);
+        require(view.page, view);
         parseView();
     }else{
         if(view.type=="plugin"){
@@ -146,11 +145,11 @@ var parseHTML = function () {
         }
         view.box.insertAdjacentHTML("beforeEnd", html);
         view.ui = view.box.lastElementChild;
+        !view.display && view.hide();
     }else{
         view.box.innerHTML = html;
         view.ui = view.box.firstElementChild;
     }
-    view.display===false && view.hide();
 
     data_bind.parse(view.ui, view);
     parsePart(view.ui, view);
@@ -227,6 +226,18 @@ app.pipeEx = {};
 
 //配置信息
 app.config = function (_cfg) {
+    var ns = {};
+    var typeList = {js:".js", css:".css", tp:".html", page:".sk"};
+    for(let k in _cfg){
+        if(/^(page|js|css|tp)$/.test(k)){
+            ns[k] = {
+                path: _cfg[k],
+                type: typeList[k]
+            }
+        }
+    }
+    seekjs.config({ns});
+
     pipe.mergeObj(cfg, _cfg);
 };
 
@@ -256,6 +267,10 @@ app.usePlugin = function(pluginName, ops={}, _view){
         parent: _view,
         root: mainView
     };
+    if(_view){
+        plugin.display = ops.hasOwnProperty("display") ? ops.display : true;
+    }
+    log({ops,plugin});
     owner.plugin[plugin.id] = plugin;
     !_view && parseURI(plugin);
 };

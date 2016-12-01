@@ -4,23 +4,24 @@
     global.seekjs = {};
     global.log = console.log;
 
-    var alias = {};
-    var ns = {};
+    seekjs.alias = {};
+    seekjs.ns = {};
 
     seekjs.isNode = typeof(module)=="object";
     seekjs.isBrowser = !seekjs.isNode;
 
     //配置命名空间和别名
     seekjs.config = function (ops) {
-        var _ns = ops.ns || {};
-        for (var k in _ns) {
-            var item = _ns[k];
-            ns[k] = item.path ? item : {path:item, type:".js"};
+        var ns = ops.ns || {};
+        for (let k in ns) {
+            var item = ns[k];
+            seekjs.ns[k] = item.path ? item : {path:item, type:".js"};
             if(seekjs.isNode){
-                ns[k].path = (seekjs.rootPath + ns[k].path).replace("//","/");
+                seekjs.ns[k].path = (seekjs.rootPath + seekjs.ns[k].path).replace("//","/");
             }
         }
-        alias = ops.alias || {};
+        var alias = ops.alias || {};
+        Object.assign(seekjs.alias, alias);
     };
 
     //加载CSS文件(only浏览器)
@@ -46,18 +47,18 @@
             return `${seekjs.sysPath}/node/${mid}.js`;
         }
         var isAlias = false;
-        for(let k in alias){
+        for(let k in seekjs.alias){
             if(mid==k){
-                mid = alias[k];
+                mid = seekjs.alias[k];
                 isAlias = true;
                 break;
             }
         }
         var isNs = false;
-        for(let k in ns) {
-            if(mid.startsWith(k)){
-                var o = ns[k];
-                mid = mid.replace(k, o.path);
+        for(let k in seekjs.ns) {
+            if(mid.startsWith(`${k}.`)){
+                var o = seekjs.ns[k];
+                mid = mid.replace(`${k}.`, o.path);
                 if(o.type && mid.includes(".")===false){
                     mid += o.type;
                 }
@@ -140,10 +141,10 @@
     var node_sys_module_re;
     seekjs.init = function(ops){
         Object.assign(seekjs, ops);
-        ns["root."] = {
+        seekjs.ns.root = {
             path: ops.rootPath
         };
-        ns["sys."] = {
+        seekjs.ns.sys = {
             path: ops.sysPath
         };
         var code = seekjs.getJsonFile(`${ops.sysPath}/node/node_sys_files.json`).join("|");
