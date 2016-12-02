@@ -159,7 +159,6 @@ var parseHTML = function () {
     view.onRender && view.onRender();
 
     chkSubView(view, view.ui);
-    alert(subViewList.length);
     if(subViewList.length>0) {
         loadSubView();
     }else if(mainView){
@@ -271,7 +270,6 @@ app.usePlugin = function(pluginName, ops={}, _view){
     if(_view){
         plugin.display = ops.hasOwnProperty("display") ? ops.display : true;
     }
-    log({ops,plugin});
     owner.plugin[plugin.id] = plugin;
     !_view && parseURI(plugin);
 };
