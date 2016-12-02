@@ -154,11 +154,12 @@ var parseHTML = function () {
     data_bind.parse(view.ui, view);
     parsePart(view.ui, view);
     event.parse(view.ui, view);
-    chkSubView(view, view.ui);
 
     app.onRender && app.onRender(view);
     view.onRender && view.onRender();
 
+    chkSubView(view, view.ui);
+    alert(subViewList.length);
     if(subViewList.length>0) {
         loadSubView();
     }else if(mainView){
