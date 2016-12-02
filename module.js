@@ -21,7 +21,9 @@
             }
         }
         var alias = ops.alias || {};
-        Object.assign(seekjs.alias, alias);
+        for(let k in alias){
+            seekjs.alias[k] = seekjs.isNode ? seekjs.rootPath+alias[k] : alias[k];
+        }
     };
 
     //加载CSS文件(only浏览器)
