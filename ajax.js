@@ -15,7 +15,7 @@ module.exports = function (ops) {
         if(ops.dataType=="json"){
             text = new Function(`return ${text};`)();
         }
-        ops.success(text);
+        ops.success && ops.success(text);
     };
     xhr.send(data);
 };
