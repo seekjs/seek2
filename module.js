@@ -142,10 +142,10 @@
     seekjs.init = function(ops){
         Object.assign(seekjs, ops);
         seekjs.ns.root = {
-            path: ops.rootPath
+            path: ops.rootPath + "/"
         };
         seekjs.ns.sys = {
-            path: ops.sysPath
+            path: ops.sysPath + "/"
         };
         var code = seekjs.getJsonFile(`${ops.sysPath}/node/node_sys_files.json`).join("|");
         node_sys_module_re = new Function(`return /^(${code})$/`)();

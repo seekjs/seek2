@@ -51,7 +51,7 @@ var parseURI = function(ops){
         view.params[params.shift()] = params.shift();
     }
     if(window.modules) {
-        require(view.page, view);
+        require(view.type=="plugin"?view.page:`page.${view.page}`, view);
         parseView();
     }else{
         if(view.type=="plugin"){
@@ -277,7 +277,7 @@ app.usePlugin = function(pluginName, ops={}, _view){
 
 //初始化
 app.init  = function (page) {
-    if(!cfg.page && !cfg.js){
+    if(!window.modules && !cfg.page && !cfg.js){
         console.error(`please use "app.config" method set a sk page directory or a js directory before!`);
         return;
     }
