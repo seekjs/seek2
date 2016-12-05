@@ -11,8 +11,8 @@ var data_part = require("sys.data_part");
 var lang = require("sys.lang");
 var template = require("sys.template");
 var pipe = require("sys.pipe");
-//pipe.local = localStorage;
-//pipe.session = sessionStorage;
+pipe.local = localStorage;
+pipe.session = sessionStorage;
 
 var view;
 var mainView;
@@ -42,8 +42,10 @@ var parseURI = function(ops){
     view.query = urlParse(view.uri, true).query || null;
     var params = view.uri.split("?")[0].split("/");
     view.page = params.shift();
-    log(`step1.parseURI: uri=${view.uri} type=${view.type}`);
     view.params = {};
+    view.params.source = params.join("/") ;
+    log(`step1.parseURI: uri=${view.uri} type=${view.type}`);
+
     if(params.length % 2){
          view.params.id = params.shift();
     }
@@ -138,7 +140,14 @@ var parseHTML = function () {
     view.onRenderBefore && view.onRenderBefore();
 
     var model = view.model || view;
-    var html = view.getHTML.call(model, pipe);
+
+    var Class = function(){};
+    Class.prototype = pipe;
+    var $ = new Class();
+    $.view = view;
+    $.params = view.params;
+
+    var html = view.getHTML.call(model, $);
     if(view.type=="plugin") {
         if(view.ui && view.ui.parent==view.box){
             view.box.removeChild(view.ui);
