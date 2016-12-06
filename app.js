@@ -37,7 +37,7 @@ var parseURI = function(ops){
         mainView = view;
     }
     if(view.type=="plugin"){
-        view.owner.plugin[view.id] = view;
+        view._owner.plugin[view.id] = view;
     }
     view.query = urlParse(view.uri, true).query || null;
     var params = view.uri.split("?")[0].split("/");
@@ -111,7 +111,11 @@ var parseSkPage = function() {
 
 //解析view
 var parseView = function () {
-    view.type!="plugin" && pipe.mergeObj(view, app.viewEx, true);
+    if(view.type=="plugin") {
+        Object.assign(view, view._options);
+    }else{
+        pipe.mergeObj(view, app.viewEx, true);
+    }
     log(`step3.parseView: uri=${view.uri}`);
 
     app.onInit && app.onInit(view);
@@ -149,7 +153,8 @@ var parseHTML = function () {
 
     var html = view.getHTML.call(model, $);
     if(view.type=="plugin") {
-        if(view.ui && view.ui.parent==view.box){
+        //if(view.ui && view.ui.parent==view.box){
+        if(view.ui){
             view.box.removeChild(view.ui);
         }
         view.box.insertAdjacentHTML("beforeEnd", html);
@@ -262,24 +267,23 @@ app.addPipe = function(pipeEx){
 
 //使用插件
 app.usePlugin = function(pluginName, ops={}, _view){
-    var owner =  _view || app;
+    var _owner =  _view || app;
     var plugin = {
-        owner,
+        _owner,
+        _options: ops,
         type: "plugin",
         box: !_view && document.body,
         uri: pluginName,
         name: pluginName,
         id: pluginName.split("-").pop(),
         display: ops.display,
-        data: ops.data || {},
-        options: ops,
         parent: _view,
         root: mainView
     };
     if(_view){
         plugin.display = ops.hasOwnProperty("display") ? ops.display : true;
     }
-    owner.plugin[plugin.id] = plugin;
+    _owner.plugin[plugin.id] = plugin;
     !_view && parseURI(plugin);
 };
 

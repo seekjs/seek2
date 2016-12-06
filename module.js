@@ -102,7 +102,7 @@
         if(file) {
             code += `\n\n//# sourceURL=${file}`;
         }
-        return new Function("require", "exports", "module", "dirname", "filename", code)(require, exports, module, file, file);
+        return new Function("require", "exports", "module", "__dirname", "__filename", code)(require, exports, module, file, file);
     };
 
     var iii=0;
