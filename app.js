@@ -11,8 +11,11 @@ var data_part = require("sys.data_part");
 var lang = require("sys.lang");
 var template = require("sys.template");
 var pipe = require("sys.pipe");
-pipe.local = localStorage;
-pipe.session = sessionStorage;
+Object.assign(pipe, {
+    local: localStorage,
+    session: sessionStorage,
+    env: require("sys.env")
+});
 
 var view;
 var mainView;
