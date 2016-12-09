@@ -29,7 +29,7 @@ var parseHash = function() {
     parseURI({
         type: "main",
         box: app.box,
-        uri: uri,
+        uri: uri
     });
 };
 
@@ -48,6 +48,10 @@ var parseURI = function(ops){
     view.params = {};
     view.params.source = params.join("/") ;
     log(`step1.parseURI: uri=${view.uri} type=${view.type}`);
+
+    if(view.type=="sub"){
+        view.parent[view.page] = view;
+    }
 
     if(params.length % 2){
          view.params.id = params.shift();
