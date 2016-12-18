@@ -1,0 +1,13 @@
+.right{
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    background-image: url(/test/right.png);
+    background-size: 40px 40px;
+}
+
+.wrong{
+    width: 20px;
+    height: 20px;
+    background: url(/test/wrong.png);
+}

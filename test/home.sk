@@ -4,15 +4,29 @@
 
 <template>
     <div class="home">
-        <ul>
-            <li>111</li>
-        </ul>
+        <ol>
+            {foreach src=this.list item=Item}
+            <li>
+                <p>{Item.name}</p>
+                {foreach src=Item.example}
+                    <p>
+                        <span>{item.title}</span>
+                        <span class="{this.getAnswer(item,Item.name)}"></span>
+                    </p>
+                {/foreach}
+            </li>
+            {/foreach}
+        </ol>
     </div>
 </template>
 
 <script type="text/ecmascript-6">
-var list = {
-    app: ["useTitleRepair", "useAnimate"],
-    view: []
+window.pipe = require("sys.pipe");
+
+exports.list = require("data.data");
+
+exports.getAnswer = function (x, name) {
+    var code = `return ${x.code}=="${x.result}";`;
+    return new Function(code)() ? "right" : "wrong";
 };
 </script>
