@@ -1,6 +1,6 @@
 {
   "name": "seekjs",
-  "version": "2.1.4",
+  "version": "2.1.5",
   "description": "seekjs前端框架",
   "main": "./module.js",
   "author": {
