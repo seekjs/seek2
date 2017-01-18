@@ -4,6 +4,7 @@
 
 var urlParse = require("url").parse;
 
+var $ = require("jquery");
 var View = require("sys.view");
 var event = require("sys.event");
 var data_bind = require("sys.data_bind");
@@ -47,14 +48,14 @@ var parseURI = function(ops){
     view.page = params.shift();
     view.params = {};
     view.params.source = params.join("/") ;
-    log(`step1.parseURI: uri=${view.uri} type=${view.type}`);
+    //log(`step1.parseURI: uri=${view.uri} type=${view.type}`);
 
     if(view.type=="sub"){
         view.parent[view.page] = view;
     }
 
     if(params.length % 2){
-         view.params.id = params.shift();
+        view.params.id = params.shift();
     }
     while(params.length){
         view.params[params.shift()] = params.shift();
@@ -99,7 +100,7 @@ var parseSkPage = function() {
         tpCode = tpFile && seekjs.getCode(tpFile) || "";
         jsCode = jsFile && seekjs.getCode(jsFile) || "";
     }
-    log(`step2.parseSkPage: url=${view.url}`);
+    //log(`step2.parseSkPage: url=${view.url}`);
     if (!cssCode && !tpCode && !jsCode && Object.keys(diy).length == 0) {
         tpCode = code.trim();
     }
@@ -123,17 +124,18 @@ var parseView = function () {
     }else{
         pipe.mergeObj(view, app.viewEx, true);
     }
-    log(`step3.parseView: uri=${view.uri}`);
+    //log(`step3.parseView: uri=${view.uri}`);
 
     app.onInit && app.onInit(view);
 
     if(view.onInit){
         if(view.onInit.length>0){
-            return view.onInit(parseHTML);
+            var currentView = view;
+            return view.onInit(x=>parseHTML(currentView));
         }
         view.onInit();
     }
-    parseHTML();
+    parseHTML(view);
 };
 
 //解析样式
@@ -145,8 +147,8 @@ var parseCss = function (code) {
 };
 
 //解析HTML
-var parseHTML = function () {
-    log(`step4.parseHTML: uri=${view.uri}`);
+var parseHTML = function (view) {
+    //log(`step4.parseHTML: uri=${view.uri}`);
     app.onRenderBefore && app.onRenderBefore(view);
     view.onRenderBefore && view.onRenderBefore();
 
@@ -171,7 +173,10 @@ var parseHTML = function () {
         view.box.innerHTML = html;
         view.ui = view.box.firstElementChild;
     }
-
+    if(view.title){
+        document.title = view.title;
+        app.repairTitle();
+    }
     data_bind.parse(view.ui, view);
     parsePart(view.ui, view);
     event.parse(view.ui, view);
@@ -185,14 +190,14 @@ var parseHTML = function () {
     }else if(mainView){
         app.onLoad && app.onLoad(view);
         view.onLoad && view.onLoad();
-        log("end: load complete!")
+        //log("end: load complete!")
     }
 };
 
 //解析part
 var parsePart = function(box, view){
     var partList = [...box.querySelectorAll("[data-part]")];
-    log(`step5.parsePart: part=[${partList.map(x=>x.dataset.part)}]`);
+    //log(`step5.parsePart: part=[${partList.map(x=>x.dataset.part)}]`);
     partList.forEach(x=>{
         var o = view[x.dataset.part] = new View(app);
         Object.assign(o, {
@@ -206,7 +211,7 @@ var parsePart = function(box, view){
                 var html = o.parent.getHTML.call(o.parent.model || o.parent, pipe);
                 var div = document.createElement("div");
                 div.innerHTML = html;
-                html = div.querySelector(`[data-part=${o.id}`).innerHTML;
+                html = div.querySelector(`[data-part=${o.id}]`).innerHTML;
                 div = null;
                 o.box.innerHTML = html;
                 data_bind.parse(o.ui, o.parent);
@@ -236,7 +241,7 @@ var chkSubView = function(view, box){
         view.plugin[k].box = view.ui;
         subViewList.push(view.plugin[k]);
     }
-    log(`step6.chkSubView: subview=[${subViewList.map(x=>x.uri)}]\n\n`);
+    //log(`step6.chkSubView: subview=[${subViewList.map(x=>x.uri)}]\n\n`);
 };
 
 
@@ -310,8 +315,17 @@ app.init  = function (page) {
 };
 
 app.render = function(currentView){
-    view = currentView;
-    parseHTML();
+    //view = currentView;
+    parseHTML(currentView);
 };
 
+//修复IOS下微信Title不更新的Bug
+app.repairTitle = function(){
+    var $body = $('body');
+    var $iframe = $('<iframe  src = "/opacity.png"></iframe>').on('load', function() {
+        setTimeout(function() {
+            $iframe.off('load').remove();
+        }, 0)
+    }).appendTo($body);
+};
 module.exports = app;
