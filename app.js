@@ -175,7 +175,10 @@ var parseHTML = function (view) {
     }
     if(view.title){
         document.title = view.title;
-        app.repairTitle();
+        if(window.navigator.userAgent.toLowerCase().match(/MicroMessenger/i) == "micromessenger"){
+            app.repairTitle();
+        }
+
     }
     data_bind.parse(view.ui, view);
     parsePart(view.ui, view);
