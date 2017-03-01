@@ -43,12 +43,32 @@
         return xhr.responseText;
     };
 
+	//根据相对路径获取绝对路径
+	seekjs.getResolvePath = function (mid, refPath) {
+		refPath = refPath.split("/");
+		mid = mid.split("/");
+		var x;
+		while (x=mid[0]){
+			if(x=="."){
+				mid.shift();
+			}else if(x==".."){
+				mid.shift();
+				refPath.pop();
+			}else{
+				break;
+			}
+		}
+		return refPath.concat(mid).join("/");
+	};
+
     //获取绝对路径
-    seekjs.getPath = function (mid) {
+    seekjs.getPath = function (mid, refPath) {
+	    //系统模块
         if(node_sys_module_re.test(mid)){
             return `${seekjs.sysPath}/node/${mid}.js`;
         }
         var isAlias = false;
+	    //别名
         for(let k in seekjs.alias){
             if(mid==k){
                 mid = seekjs.alias[k];
@@ -57,6 +77,7 @@
             }
         }
         var isNs = false;
+	    //命令空间
         for(let k in seekjs.ns) {
             if(mid.startsWith(`${k}.`)){
                 var o = seekjs.ns[k];
@@ -68,12 +89,23 @@
                 break;
             }
         }
-        if(!isNs && !/^[\.\/]/.test(mid)){
-            var prefix = seekjs.isNode ? seekjs.rootPath.replace(/\/$/,"") : "";
-            var jsonStr = seekjs.getCode(`${prefix}/node_modules/${mid}/package.json`);
-            var pk = seekjs.parseModule(`module.exports=${jsonStr}`);
-            var main = pk.main || "index.js";
-            mid = `${prefix}/node_modules/${mid}/${main}`;
+        if(!isNs){
+	        //相对路径
+	        if(/^\./.test(mid)) {
+				if(refPath){
+					mid = seekjs.getResolvePath(mid, refPath);
+				}
+	        //绝对路径
+	        }else if(/^\//.test(mid)){
+
+	        //用户模块
+	        }else {
+		        var prefix = seekjs.isNode ? seekjs.rootPath.replace(/\/$/, "") : "";
+		        var jsonStr = seekjs.getCode(`${prefix}/node_modules/${mid}/package.json`);
+		        var pk = JSON.parse(jsonStr);
+		        var main = pk.main || "index.js";
+		        mid = `${prefix}/node_modules/${mid}/${main}`;
+	        }
         }
         if(!/\.\w+$/.test(mid)){
             mid += ".js";
@@ -84,51 +116,56 @@
     var modules = {};
 
     //解析模块
-    seekjs.parseModule = function (code, iniExports, file) {
-        var require = function (mid) {
-            return seekjs.getModule(mid);
-        };
-        var module = {};
+    seekjs.parseModule = function (module) {
         module.resolve = function(path){
             return path;
         };
-        var exports = module.exports = iniExports || {};
+	    var require = function (mid) {
+		    return seekjs.getModule(mid, module.path).exports;
+	    };
+        var exports = module.exports || {};
 
-        code = `
+        var code = `
         \n\n\n
-        ${code}
+        ${module.code}
         \n\n\n
         return module.exports;`;
-        if(file) {
-            code += `\n\n//# sourceURL=${file}`;
+        if(module.file) {
+            code += `\n\n//# sourceURL=${module.file}`;
         }
-        return new Function("require", "exports", "module", "__dirname", "__filename", code)(require, exports, module, file, file);
+        var fun = new Function("require", "exports", "module", "__dirname", "__filename", code);
+	    return fun(require, exports, module, module.dir, module.file);
     };
 
     var iii=0;
     //加载模块
-    seekjs.getModule = function (mid) {
+    seekjs.getModule = function (mid, refPath) {
         if(++iii==99999){
             throw "call times is too more!";
         }
-        if (!modules[mid]) {
-            var path = seekjs.getPath(mid);
-            var file = path.split("/").pop();
+	    var path = seekjs.getPath(mid, refPath); //绝对路径
+	    var module = modules[path];
+        if (!module) {
+	        var pathParts = path.split("/");
+	        module = {};
+	        module.path = path;
+            module.file = pathParts.pop();
+	        module.dir = pathParts.join("/");
             if (path.endsWith(".css")) {
-                modules[mid] = path;
                 seekjs.loadCss(path);
             }else {
-                var code = seekjs.getCode(path);
+                module.code = seekjs.getCode(path);
                 if(path.endsWith(".js")) {
-                    modules[mid] = seekjs.parseModule(code,null,file);
+                    module.exports = seekjs.parseModule(module);
                 }else if(path.endsWith(".json")) {
-                    modules[mid] = JSON.parse(code);
+                    module.exports = JSON.parse(module.code);
                 }else {
-                    modules[mid] = code;
+                    module.exports = module.code;
                 }
             }
         }
-        return modules[mid];
+	    log({module})
+        return module;
     };
 
     seekjs.getJson = function(jsonStr){
@@ -163,7 +200,7 @@
         var main = lastScript.dataset.main;
         if (main) {
             global.onload = function () {
-                seekjs.getModule(main);
+                seekjs.getModule(main, seekjs.rootPath);
             };
         }
     }

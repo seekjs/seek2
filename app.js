@@ -113,7 +113,7 @@ var parseSkPage = function() {
         jsCode += `\n\nexports.getHTML = function($){ ${template.getJsCode(tpCode || "")} };`;
     }
     var fileName = view.type=="plugin" && `${view.page}.sk` || `page.${view.page}.sk`;
-    seekjs.parseModule(jsCode, view, fileName);
+    seekjs.parseModule({code:jsCode, exports:view, file:fileName});
     parseView();
 };
 
