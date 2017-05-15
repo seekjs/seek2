@@ -4,7 +4,6 @@
 
 var urlParse = require("url").parse;
 
-var $ = require("jquery");
 var View = require("sys.view");
 var event = require("sys.event");
 var data_bind = require("sys.data_bind");

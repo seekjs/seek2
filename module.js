@@ -45,7 +45,7 @@
 
 	//根据相对路径获取绝对路径
 	seekjs.getResolvePath = function (mid, refPath) {
-		refPath = refPath.split("/");
+		refPath = refPath.replace(/\/$/,"").split("/");
 		mid = mid.split("/");
 		var x;
 		while (x=mid[0]){
@@ -86,10 +86,10 @@
                     mid += o.type;
                 }
                 isNs = true;
-                break;
+                break;ed
             }
         }
-        if(!isNs){
+        if(!isAlias && !isNs){
 	        //相对路径
 	        if(/^\./.test(mid)) {
 				if(refPath){
@@ -114,6 +114,7 @@
     };
 
     var modules = {};
+	//seekjs.modules  = modules;
 
     //解析模块
     seekjs.parseModule = function (module) {
@@ -121,11 +122,12 @@
             return path;
         };
 	    var require = function (mid) {
-		    return seekjs.getModule(mid, module.path).exports;
+		    return seekjs.getModule(mid, module.dir||module.path).exports;
 	    };
-        var exports = module.exports || {};
 
         var code = `
+        exports = exports ||  {};
+        module.exports = module.exports || exports;
         \n\n\n
         ${module.code}
         \n\n\n
@@ -133,8 +135,8 @@
         if(module.file) {
             code += `\n\n//# sourceURL=${module.file}`;
         }
-        var fun = new Function("require", "exports", "module", "__dirname", "__filename", code);
-	    return fun(require, exports, module, module.dir, module.file);
+        var fun = Function("require", "exports", "module", "__dirname", "__filename", code);
+	    new fun(require, module.exports, module, module.dir, module.file);
     };
 
     var iii=0;
@@ -144,10 +146,13 @@
             throw "call times is too more!";
         }
 	    var path = seekjs.getPath(mid, refPath); //绝对路径
+	    if(/\.(?:js|json|css|html|sk|txt)$/.test(path)==false){
+		    path += ".js";
+	    }
 	    var module = modules[path];
         if (!module) {
 	        var pathParts = path.split("/");
-	        module = {};
+	        module = modules[path] = {};
 	        module.path = path;
             module.file = pathParts.pop();
 	        module.dir = pathParts.join("/");
@@ -156,15 +161,14 @@
             }else {
                 module.code = seekjs.getCode(path);
                 if(path.endsWith(".js")) {
-                    module.exports = seekjs.parseModule(module);
+                    seekjs.parseModule(module);
                 }else if(path.endsWith(".json")) {
                     module.exports = JSON.parse(module.code);
-                }else {
+                }else{
                     module.exports = module.code;
                 }
             }
         }
-	    log({module})
         return module;
     };
 
@@ -194,8 +198,8 @@
     if(global.document) {
         var lastScript = [...document.scripts].pop();
         seekjs.init({
-            rootPath: location.href.replace(/#.*$/, "").replace(/\w+\.html/, ""),
-            sysPath: lastScript.src.replace(/\w+\.js/, "")
+            rootPath: location.href.replace(/#.*$/, "").replace(/\w+\.html/, "").replace(/\/$/,""),
+            sysPath: lastScript.src.replace(/\/\w+\.js/, "")
         });
         var main = lastScript.dataset.main;
         if (main) {
