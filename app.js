@@ -322,6 +322,7 @@ app.render = function(currentView){
 };
 
 //修复IOS下微信Title不更新的Bug
+/*
 app.repairTitle = function(){
     var $body = $('body');
     var $iframe = $('<iframe  src = "/opacity.png"></iframe>').on('load', function() {
@@ -329,5 +330,14 @@ app.repairTitle = function(){
             $iframe.off('load').remove();
         }, 0)
     }).appendTo($body);
+};
+*/
+app.repairTitle = function(){
+    var iframe = document.createElement('iframe');
+    iframe.src = "/opacity.png";
+    iframe.onload = function () {
+        document.body.removeChild(iframe);
+    };
+    document.body.appendChild(iframe);
 };
 module.exports = app;
