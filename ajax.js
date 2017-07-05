@@ -16,6 +16,15 @@ module.exports = function (ops) {
             text = new Function(`return ${text};`)();
         }
         ops.success && ops.success(text);
+        ops.callback && ops.callback(text);
     };
     xhr.send(data);
+};
+
+module.exports.get = function () {
+
+};
+
+module.exports.post = function (url, data, callback) {
+    return this({url, data, callback});
 };
