@@ -77,12 +77,12 @@
             }
         }
         var isNs = false;
-	    //命令空间
+	    //命名空间
         for(let k in seekjs.ns) {
             if(mid.startsWith(`${k}.`)){
                 var o = seekjs.ns[k];
                 mid = mid.replace(`${k}.`, o.path);
-                if(o.type && mid.includes(".")===false){
+                if(o.type && /\.\w+$/.test(mid)===false){
                     mid += o.type;
                 }
                 isNs = true;

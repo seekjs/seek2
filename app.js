@@ -91,7 +91,7 @@ var parseSkPage = function() {
             cssFile = jsFile.replace(/\.js$/,".css");
             tpFile = jsFile.replace(/\.js$/,".html");
         }else {
-            cssFile = cfg.css && `${cfg.css + view.page}.css`;
+            cssFile = cfg.st && `${cfg.st + view.page}.css`;
             jsFile = cfg.js && `${cfg.js + view.page}.js`;
             tpFile = cfg.tp && `${cfg.tp + view.page}.html`;
         }
@@ -109,6 +109,9 @@ var parseSkPage = function() {
     //view.diy = diy;
     cssCode && parseCss(cssCode);
     if (/exports\.getHTML\s*=/.test(jsCode)==false) {
+        if (tpCode == '') {
+            throw 'please set [getHTML] method or config the global template path before!';
+        }
         jsCode += `\n\nexports.getHTML = function($){ ${template.getJsCode(tpCode || "")} };`;
     }
     var fileName = view.type=="plugin" && `${view.page}.sk` || `page.${view.page}.sk`;

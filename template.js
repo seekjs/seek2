@@ -46,7 +46,7 @@ exports.getJsCode= function (tmpCode) {
 				exp = exp.split("=");
 				o[exp[0]] = exp[1];
 			});
-			var key = o.key || "i";
+			var key = o.key || "index";
 			var item = o.item || "item";
 			if (o.start) {
 				jscode.push("for(var " + key + "=" + o.start + ";" + key + "<=" + o.end + "; " + key + "++){");
