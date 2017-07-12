@@ -2,7 +2,7 @@
  * Created by likaituan on 16/10/19.
  */
 
-var urlParse = require("url").parse;
+var urlParse = require("sys.node").urlParse;
 
 var View = require("sys.view");
 var event = require("sys.event");

@@ -1,5 +1,5 @@
-//解析
-exports.parseUrl = function(uri, parseQueryString){
+//URL解析
+exports.urlParse = function(uri, parseQueryString){
     var query = uri.split("?")[1];
     if(parseQueryString && query) {
         var a = query.split("&");
@@ -17,6 +17,6 @@ exports.parseUrl = function(uri, parseQueryString){
 
 
 //解析
-exports.parseQs = function(){
+exports.qsParse = function(){
 
 };

@@ -13,5 +13,6 @@
   },
   "scripts": {
     "genui": "node bin/genui.js"
-  }
+  },
+  "dependencies": {}
 }

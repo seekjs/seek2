@@ -5,11 +5,10 @@
 
 module.exports = function (ops) {
 	var xhr = new XMLHttpRequest();
-	this.options.onBefore && this.options.onBefore(xhr);
-
 	var type = (ops.type || this.options.type).toLowerCase();
 	xhr.open(type, ops.url, true);
 	xhr.responseType = ops.dataType || this.options.dataType;
+	this.options.onBefore && this.options.onBefore(xhr);
 	xhr.onload = function () {
 		var data = xhr.response;
 		ops.success && ops.success(data);
@@ -48,9 +47,11 @@ module.exports.config = function (options) {
 };
 
 module.exports.get = function (url, callback) {
-	return this({url, callback, type:'get'});
+	var ops = {url, callback, type:'get'};
+	return this.call(this,ops);
 };
 
 module.exports.post = function (url, data, callback) {
-    return this({url, data, callback, type:'post'});
+	var ops = {url, data, callback, type:'post'};
+    return this.call(this, ops);
 };
