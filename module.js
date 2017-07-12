@@ -64,9 +64,6 @@
     //获取绝对路径
     seekjs.getPath = function (mid, refPath) {
 	    //系统模块
-        if(node_sys_module_re.test(mid)){
-            return `${seekjs.sysPath}/node/${mid}.js`;
-        }
         var isAlias = false;
 	    //别名
         for(let k in seekjs.alias){
@@ -181,7 +178,6 @@
         return seekjs.getJson(code);
     };
 
-    var node_sys_module_re;
     seekjs.init = function(ops){
         Object.assign(seekjs, ops);
         seekjs.ns.root = {
@@ -190,8 +186,6 @@
         seekjs.ns.sys = {
             path: ops.sysPath + "/"
         };
-        var code = seekjs.getJsonFile(`${ops.sysPath}/node/node_sys_files.json`).join("|");
-        node_sys_module_re = new Function(`return /^(${code})$/`)();
     };
 
     //针对浏览器端
