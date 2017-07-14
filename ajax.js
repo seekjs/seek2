@@ -46,12 +46,29 @@ module.exports.config = function (options) {
 	Object.assign(this.options, options);
 };
 
-module.exports.get = function (url, callback) {
+// get请求
+module.exports.get = function (url, data, callback) {
+	if (typeof data === 'function') {
+		callback = data;
+		data = {};
+	}
+	var qs = [];
+	for (var key in data) {
+		qs.push(`${key}=${data[key]}`);
+	}
+	if (qs.length) {
+		url += '?' + qs.join('&');
+	}
 	var ops = {url, callback, type:'get'};
 	return this.call(this,ops);
 };
 
+// post请求
 module.exports.post = function (url, data, callback) {
+	if (typeof data === 'function') {
+		callback = data;
+		data = {};
+	}
 	var ops = {url, data, callback, type:'post'};
     return this.call(this, ops);
 };

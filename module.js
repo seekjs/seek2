@@ -40,7 +40,8 @@
         var xhr = new XMLHttpRequest();
         xhr.open("GET", path, false);
         xhr.send();
-        return xhr.responseText;
+	    // console.log(xhr);
+        return xhr.status==200 && xhr.responseText || '';
     };
 
 	//根据相对路径获取绝对路径
@@ -99,7 +100,10 @@
 	        }else {
 		        var prefix = seekjs.isNode ? seekjs.rootPath.replace(/\/$/, "") : "";
 		        var jsonStr = seekjs.getCode(`${prefix}/node_modules/${mid}/package.json`);
-		        var pk = JSON.parse(jsonStr);
+		        var pk = {};
+		        try {
+			        pk = JSON.parse(jsonStr);
+		        }catch(e){}
 		        var main = pk.main || "index.js";
 		        mid = `${prefix}/node_modules/${mid}/${main}`;
 	        }

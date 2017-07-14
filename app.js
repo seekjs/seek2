@@ -77,8 +77,10 @@ var parseSkPage = function() {
     var cssFile, tpFile, jsFile;
     var cssCode, tpCode, jsCode;
     var diy = {};
+    var code = '';
+	var file = view.name;
     if (view.url && view.url.endsWith(".sk")) {
-        var code = require(view.url);
+        code = require(view.url);
         cssCode = /<style.*?>([\s\S]+?)<\/style>/.test(code) && RegExp.$1;
         tpCode = /<template.*?>([\s\S]+?)<\/template>/.test(code) && RegExp.$1;
         jsCode = /<script.*?>([\s\S]+?)<\/script>/.test(code) && RegExp.$1;
@@ -104,7 +106,11 @@ var parseSkPage = function() {
         tpCode = code.trim();
     }
     if (!jsCode && !tpCode) {
-        throw `the "${file}" page mush has a script or template`
+	    if (view.type === 'plugin') {
+		    throw `the [${file}] plugin is no install`;
+	    } else {
+		    throw `the "${file}" page mush has a script or template`;
+	    }
     }
     //view.diy = diy;
     cssCode && parseCss(cssCode);
