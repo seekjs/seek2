@@ -98,7 +98,9 @@
 
 	        //用户模块
 	        }else {
-		        var prefix = seekjs.isNode ? seekjs.rootPath.replace(/\/$/, "") : "";
+		        log({seekjs});
+		        //var prefix = seekjs.isNode ? seekjs.rootPath.replace(/\/$/, "") : "";
+		        var prefix = seekjs.rootPath.replace(/\/$/, "");
 		        var jsonStr = seekjs.getCode(`${prefix}/node_modules/${mid}/package.json`);
 		        var pk = {};
 		        try {
