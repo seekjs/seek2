@@ -64,6 +64,9 @@
 
     //获取绝对路径
     seekjs.getPath = function (mid, refPath) {
+	    if (/^https?:\/\//i.test(mid)) {
+		    return mid;
+	    }
 	    //系统模块
         var isAlias = false;
 	    //别名

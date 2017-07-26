@@ -9,13 +9,15 @@ module.exports = function (ops) {
 	xhr.open(type, ops.url, true);
 	xhr.responseType = ops.dataType || this.options.dataType;
 	this.options.onBefore && this.options.onBefore(xhr);
-	xhr.onload = function () {
+	xhr.onload = () => {
+		log({cp: this.options.onComplete});
+		this.options.onComplete && this.options.onComplete(xhr);
 		var data = xhr.response;
 		ops.success && ops.success(data);
 		ops.callback && ops.callback(data);
 	};
 	xhr.timeout = ops.timeout || this.options.timeout;
-	xhr.ontimeout = function(event){
+	xhr.ontimeout = event => {
 		alert('请求超时！');
 	} ;
 	//if(type=="post") {
