@@ -8,6 +8,15 @@
     var oo = {
         val: {
             get: function(ele){
+                if(ele.tagName=="SELECT" && ele.multiple){
+                    var options = Array.from(ele.querySelectorAll('option'));
+                    var arr = [];
+                    for(var i in options) {
+                        var op = options[i];
+                        op.selected && arr.push(op.value);
+                    }
+                    return arr.join(',');
+                }
                 return ele.value;
             },
             set: function(ele, v){
@@ -18,9 +27,8 @@
             get: function(ele){
                 if(ele.tagName=="SELECT"){
                     return ele.options[ele.selectedIndex].innerHTML;
-                }else {
-                    return ele.innerHTML;
                 }
+                return ele.innerHTML;
             },
             set: function(ele, v){
                 if(ele.tagName!="SELECT") {
