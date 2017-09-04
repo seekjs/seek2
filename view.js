@@ -35,10 +35,17 @@ var Prototype = {
         }
     },
 
+    // 刷新
     render: function(){
         this.app.render(this);
     },
 
+    // 替换view
+    review: function(page){
+        this.app.review(this.box, page);
+    },
+
+    // 更新模型
     up2model: function() {
         data_bind.up2model(this.ui, this);
     }

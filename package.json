@@ -1,7 +1,7 @@
 {
   "name": "seek2",
-  "version": "2.3.1",
-  "description": "seekjs前端框架",
+  "version": "2.4.0",
+  "description": "seekjs渐进式前端框架",
   "main": "./module.js",
   "author": {
     "name": "Li",

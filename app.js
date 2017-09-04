@@ -50,7 +50,7 @@ var parseURI = function(ops){
     //log(`step1.parseURI: uri=${view.uri} type=${view.type}`);
 
     if(view.type=="sub"){
-        view.parent[view.page] = view;
+        view.parent[view.id || view.page] = view;
     }
 
     if(params.length % 2){
@@ -241,6 +241,7 @@ var chkSubView = function(view, box){
     var viewList = [...box.querySelectorAll("[data-view]")];
     viewList.forEach(x=>{
         subViewList.push({
+	        id: x.id,
             type: "sub",
             box: x,
             root: mainView,
@@ -328,6 +329,17 @@ app.init  = function (page) {
 app.render = function(currentView){
     //view = currentView;
     parseHTML(currentView);
+};
+
+app.review = function (box, uri) {
+    var ops = {
+        type: "sub",
+        box,
+        root: mainView,
+        parent: view,
+        uri
+    };
+    parseURI(ops);
 };
 
 //修复IOS下微信Title不更新的Bug
