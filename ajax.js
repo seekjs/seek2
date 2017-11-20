@@ -3,74 +3,79 @@
  * @param ops
  */
 
-module.exports = function (ops) {
-	var xhr = new XMLHttpRequest();
-	var type = (ops.type || this.options.type).toLowerCase();
-	xhr.open(type, ops.url, true);
-	xhr.responseType = ops.dataType || this.options.dataType;
-	this.options.onBefore && this.options.onBefore(xhr);
-	xhr.onload = () => {
-		log({cp: this.options.onComplete});
-		this.options.onComplete && this.options.onComplete(xhr);
-		var data = xhr.response;
-		ops.success && ops.success(data);
-		ops.callback && ops.callback(data);
-	};
-	xhr.timeout = ops.timeout || this.options.timeout;
-	xhr.ontimeout = event => {
-		alert('请求超时！');
-	} ;
-	//if(type=="post") {
-		xhr.setRequestHeader('Content-Type', this.options.contentType);
-	//}
-	for (var k in this.headers) {
-		xhr.setRequestHeader(k, this.headers[k]);
-	}
-	var dataStr = [];
-	if (ops.data) {
-		for (var k in ops.data) {
-			dataStr.push(`${k}=${encodeURIComponent(ops.data[k])}`);
-		}
-	}
-	dataStr = dataStr.join('&');
-	xhr.send(dataStr);
-};
-
-module.exports.options = {
+const OPTIONS = {
 	type: 'get',
 	dataType: 'json',
 	timeout: 30000,
-	contentType: 'application/x-www-form-urlencoded'
+	contentType: 'form'
 };
 
-// 配置
-module.exports.config = function (options) {
-	Object.assign(this.options, options);
+const contentTypeMaps = {
+	json: 'application/json',
+	form: 'application/x-www-form-urlencoded'
+};
+
+let Ajax = function (options) {
+	return new Promise((resolve, reject) => {
+		let url = options.url;
+		let data = options.data || {};
+		let type = (options.type || OPTIONS.type).toLowerCase();
+
+		let contentTypeKey = options.headers && options.headers.contentType || OPTIONS.contentType;
+		let contentType = contentTypeMaps[contentTypeKey] || contentTypeKey;
+
+		let query;
+		if (contentTypeKey === 'json') {
+			query = JSON.stringify(data);
+		} else {
+			query = Object.entries(data).map(([key,val]) => {
+				return `${key}=${encodeURIComponent(val)}`;
+			}).join('&');
+			if (query && type === 'get') {
+				url += '?' + query;
+				query = '';
+			}
+		}
+
+		let xhr = new XMLHttpRequest();
+		xhr.open(type, url, true);
+		xhr.responseType = options.dataType || OPTIONS.dataType;
+		options.onBefore && options.onBefore(xhr);
+		xhr.onload = () => {
+			options.onComplete && options.onComplete(xhr);
+			resolve(xhr.status === 200 ? xhr.response : {code: xhr.status});
+		};
+		xhr.timeout = options.timeout || OPTIONS.timeout;
+		xhr.ontimeout = event => {
+			console.log(`xhr event: ${event}`);
+			alert('请求超时！');
+			reject({code:504, message:'system timeout'});
+		};
+		xhr.setRequestHeader('Content-Type', contentType);
+		let headers = Object.assign({}, options.headers || {});
+		Object.keys(headers).forEach(key => {
+			xhr.setRequestHeader(key, headers[key]);
+		});
+		xhr.send(query);
+	});
 };
 
 // get请求
-module.exports.get = function (url, data, callback) {
-	if (typeof data === 'function') {
-		callback = data;
-		data = {};
-	}
-	var qs = [];
-	for (var key in data) {
-		qs.push(`${key}=${data[key]}`);
-	}
-	if (qs.length) {
-		url += '?' + qs.join('&');
-	}
-	var ops = {url, callback, type:'get'};
-	return this.call(this,ops);
+Ajax.get = function (url, data, options) {
+	options = options || {};
+	options.url = url;
+	options.data = url;
+	options.type = 'get';
+	return Ajax(options);
 };
 
 // post请求
-module.exports.post = function (url, data, callback) {
-	if (typeof data === 'function') {
-		callback = data;
-		data = {};
-	}
-	var ops = {url, data, callback, type:'post'};
-    return this.call(this, ops);
+Ajax.post = function (url, data, options) {
+	options = options || {};
+	options.url = url;
+	options.data = url;
+	options.type = 'post';
+    return Ajax(options);
 };
+
+module.exports = Ajax;
